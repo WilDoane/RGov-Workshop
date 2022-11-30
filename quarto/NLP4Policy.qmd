@@ -1,0 +1,2580 @@
+---
+title: "Introduction to Natural Language Processing for Public Policy Analyses"
+author: "William E. J. Doane"
+format: 
+  revealjs:
+    theme: dark
+    slide-number: true
+    show-slide-number: all
+    footer: 2022 Government & Public Policy R Conference
+    smaller: false
+    link-external-newwindow: true
+    embed-resources: true
+editor: source
+
+---
+
+# Introductions
+<style>
+.reveal .panel-tabset [role=tab],
+.reveal pre code,
+table {
+  font-size: 50%;
+}
+</style>
+
+```{r setup}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(here)
+  
+  library(tidytext)
+  library(textrecipes)
+  library(tidylda)
+  
+  library(DiagrammeR)
+  library(diffr)
+  library(corporaexplorer)
+})
+
+options(width = 150) # to affect printed PRE content
+
+# Included to prevent demo databases from growing endlessly
+unlink(list.files(here("data"), "^eo.+\\.sqlite$", full.names = TRUE))
+```
+
+## William Doane 
+
+::: columns
+::: {.column width="40%"}
+![Photograph of William Doane](images/williamdoane.png)
+<https://DrDoane.com>
+:::
+
+::: {.column width="60%"}
+* A research staff member with [IDA’s Science & Technology Policy Institute (STPI)](https://stpi.ida.org)
+  * a federally funded research & development center tasked with supporting the [White House Office of Science & Technology Policy](https://www.whitehouse.gov/ostp/)
+:::
+:::
+
+## William Doane 
+
+::: columns
+::: {.column width="40%"}
+![Photograph of William Doane](images/williamdoane.png)
+<https://DrDoane.com>
+:::
+
+::: {.column width="60%"}
+* A computer science education researcher 
+* A research associate & founding member of the [Association for the Cooperative Advancement of Science and Education (ACASE)](https://acase.org)
+  * a professional organization of educators and scientists working to improve education.
+:::
+:::
+
+
+## You
+
+* Who are you?
+* What do you hope to gain from the workshop?
+* What is your experience level...
+  * with R?
+  * with Natural Language Processing (NLP)?
+
+
+::: {.notes}
+Pair-share
+:::
+
+
+# What are We Trying to Do?
+
+## How is Language Used?
+```{r}
+grViz("
+  digraph G {
+    node [shape=record];
+    rankdir='LR'
+    bgcolor = white
+
+    'Someone\nhad an idea' ->
+    'They conducted\nresearch' ->
+    'They wrote about\ntheir research' -> 
+    'Others edited\ntheir writing' -> 
+    {'They were\npublished', 'They posted online', 'They responded to\na request for information', 'They took part in a\nsurvey or interview'} ->
+    'We read the\npublished document' ->
+    'We formed an\nidea about the idea'
+  }
+")
+```
+
+## What is the Challenge for Policy Analysis?
+
+* There's too much potentially relevant literature
+* ...being published too fast
+* ...that may be contradictory
+* ...that may be of varying quality
+* ...that may include misinformation intentionally or unintentionally
+* ...that may be a mixture of ideas in a single _document_
+* ...and what we're looking for may be only a weak signal
+
+
+```{r}
+grViz("
+  digraph G {
+    node [shape=record];
+    rankdir='LR'
+    bgcolor = white
+
+    'Define topic' ->
+    'Identify literature\non the topic' ->
+    'Downselect to\nrelevant literature' -> 
+    'Conduct\nanalyses' -> 
+    'Formulate\npolicy options' ->
+    'Communicate\nour findings'
+  }
+")
+```
+
+# What are We _Not_ Trying to Do?
+
+## Do Everything
+
+Day      | Time  | Title                               | Speaker
+-------- | ----- | ----------------------------------- | --------------
+Thursday | 09:00 | Using Quarto to Write and Update Reports | Shirley Han 
+&nbsp;   | 11:05 | Deploying R in a Secure Environment  | Jared Lander
+&nbsp;   | 13:25 | Data and American Politics           | David Shor
+&nbsp;   | 15:55 | Natural Language Statistics with LDA | Tommy Jones
+Friday   | 10:00 | Building Knowledge Systems           | Jake Dyal
+&nbsp;   | 13:35 | Qual: Shiny Qualitative Coding       | William Doane
+&nbsp;   | 15:40 | O*NET and ORS... Topic Modeling      | Drake Gibson
+
+## Harm People
+
+![Meta's Galactica](images/meta-galactica.jpg)
+
+## Steal Intellectual Property
+
+![Microsoft Github's Copilot](images/github-copilot.jpg)
+
+## Be Unkind to Others
+
+![Microsoft Tay Chatbot](images/microsoft-chatbot.jpg)
+
+
+
+
+# Where Do We Start?
+
+## You May Know Already 
+
+::: columns
+::: {.column width="65%"}
+* Programming in R
+  * vectors
+  * data.frames
+  * functions
+  * the tidyverse
+* NLP
+  * regular expressions
+  * text extraction
+  * part of speech (POS) tagging 
+:::
+* Data Formats
+  * JSON
+  * XML
+  * HTML
+* Data Interchange
+  * HTTP
+  * API
+:::
+
+
+# Natural Language Processing
+
+## NLP Includes...
+::: columns
+::: {.column width="65%"}
+* Extraction (Key term matching)
+* Description
+* Summarization
+* Topic Modeling (Latent Dirichlet Allocation/LDA)
+* Generative Modeling (Large Language Models/LLM)
+:::
+* _Terms_
+* _N-grams_
+* _Utterances_
+* _Documents_
+* _Corpora_
+
+
+::: {.smaller}
+See N-gram Language Models. https://web.stanford.edu/~jurafsky/slp3/3.pdf
+:::
+
+:::
+
+
+
+# Public Policy
+
+## Challenging Data Sources
+
+* Data sources may have per-minute, per-day, etc. data caps
+* Pay walls may hide data sources
+* Data may be mis-encoded
+* Documents may address multiple topics
+* Documents of interest may use technical language
+* You may want to use foreign language data sources
+* In some cases, data parrots prompts
+* Formulaic text: "National Science Foundation", "Abstract Provided by Author:"
+
+## Challenging Goals
+
+* Identify Emerging Topics
+  * weak signals
+  * rapidly changing terminology
+* Landscape Analysis
+  * limited access to data
+  * trust-worthiness of data difficult to determine
+* Horizon Scanning
+  * limited predictive capability
+  * new topics hard to identify from past texts alone
+
+
+# Workflow
+
+## Workflow
+
+```{r}
+grViz("
+  digraph G {
+    node [shape=record];
+    rankdir='LR'
+    bgcolor = white
+  
+'Identify\nData\nSources' ->
+'Acquire\nRaw\nData' ->
+'Archive\nRaw\nData' ->
+'Clean\nData' ->
+'Persist\nClean\nData' ->
+'Tag\nUseful\nInformation' ->
+'Analyze' ->
+'Visualize' ->
+'Formulate\nPolicy\nAlternatives' ->
+'Communicate\nFindings'
+  }
+")
+```
+
+
+
+## Identify Data Sources
+* Text. All text.
+* What is available from open sources?
+* What is available for purchase?
+* What could be collected?
+* What are the biases inherent in your data sources?
+  * Whose voices are represented? Whose are excluded?
+  * Whose voices are over sampled? Under sampled?
+  * What administrative procedures shaped the data?
+  * What social or political contexts shaped the data?
+
+## Acquire Raw Data
+* Use existing text files
+* Extract text from PDF
+* Extract text from MS Word
+* Extract text from MS Excel
+* Web scraping
+* Via APIs
+* From databases
+
+## Archive Raw Data
+* Textual data can change rapidly
+  * news sites
+  * social media
+  * versioned policy documents
+
+Saving the documents you access in their original form
+
+* Creates a provable source of data
+* Reduces network dependency, if you need to reprocess the data later
+
+## Clean Raw Data
+
+* What do you need to extract to support your analyses?
+* What errors in the data can you or should you correct?
+  * Do you risk misrepresenting the data?
+* Can you standardize the data format?
+* Can you standardize column names for rectangular data?
+
+## Clean Raw Data
+
+### Data Quality Issues
+
+* Why was this data collected?
+* What biases might have driven the collection?
+* How might the data have been mis-handled before you got it?
+* Does the data lie about the format that it's in?
+* Cautionary tale: <https://www.congress.gov/help/using-data-offsite/download-search-results>
+
+
+## Clean Raw Data
+### Data Format Issues
+
+* Is the data in a "plain text" format?
+* What even do we mean by "plain text"?
+* How is the text _encoded_? (i.e., ASCII, ANSI, UTF-8, UCS-2, etc.)
+* How is the text structured? (i.e., records and fields, unstructured, etc.)
+
+## Clean Raw Data
+### Converting from Source Format to "Plain Text"
+
+* How will you extract the data without damaging it?
+* Is the data password protected?
+* Is the data behind a General Data Protection Regulation (GDPR) wall?
+* Is the data behind a JavaScript wall?
+
+## Persist Clean Data
+
+* How will you store the data:
+  * flat files
+  * database
+    * local?
+    * remote?
+  * R data.frame
+
+## Tag Useful Information
+
+This is the heart of NLP: finding the signal in your textual data and tagging it for later analysis.
+
+Consider maintaining tags as separate data, so you can continue to grow the set of tags associated with your data over time.
+
+## Analyze
+
+Converting textual data into frequency counts, co-occurrence matrices, similarity scores, topic models.
+
+The goal is to reduce the number of documents that need to be considered and produce insights into patterns within and across the documents.
+
+Existence flags, frequency counts, co-occurrences, sentiment analysis, and topic modeling are common methods.
+
+## Visualize
+
+Visualizing the results of text analyses can range from trivial to challenging. 
+
+Tables of frequency counts are often the most direct way to convey top terms followed by bar charts of the same data, if needed. Word clouds are also popular
+
+Visualizing the results of topic modeling is akin to spotting constellations in the night sky. You're projecting 100,000+ dimensional spaces onto 2- or 3-dimensional surfaces.
+
+## Formulate Policy Alternatives
+
+What topics you research and what constitutes evidence for or against policy alternatives varies greatly.
+
+I often find myself considering a policy matrix:
+
+&nbsp; | Do Less | Do the Same | Do More | Do Something Else
+------ | ------- | ----------- | ------- | -----------------
+Would it be Feasible? | | | |
+Would it be Ethical? | | | |
+Would it be Legal? | | | |
+Who Benefits? | | | |
+Who Doesn't? | | | |
+What are the costs? | | | |
+Who would be responsible? | | | |
+
+
+
+## Communicate Findings
+
+Reproducible research involves collecting data, analyzing it, and communicating findings in ways that support review, reproduction, and (to your intended audience) transparency.
+
+Tools such as [RMarkdown](https://rmarkdown.rstudio.com/) and the newer and more capable [Quarto](https://quarto.org/) help you to structure your analyses as executable documents.
+
+
+
+
+
+
+
+
+# R Packages
+
+## Acquire (and Archive) Raw Data
+
+May methods for acquiring data also have built-in ways to write the results to disk.
+
+R Package | Capabilities
+--------- | ----------------------------------
+httr      | Low-level HTTP operations
+rvest     | Higher-level HTML and XML operations
+tidyRSS   | For well-structured RSS 
+utils     | Base R download.file() function
+purrr     | Functional programming-style iteration
+aRxiv     | Wrapper for the arXiv API
+
+## Clean Raw Data
+
+R Package | Capabilities
+--------- | ----------------------------------
+hexView   | Low-level file content inspection
+base      | readLines, read.csv
+readr     | read_lines, read_csv
+dplyr     | Manipulation of data.frames
+tidyr     | widen or lengthen data (c -> r, r -> c)
+stringr   | String manipulation and regular expressions
+iconv     | Low-level text encoding operations
+humaniformat | Standardize human names
+
+## Persist Clean Data
+
+How you persist your data is task-dependent. For smaller-scale tasks, storing your data as flat files might suffice while in larger-scale tasks a database---possibly remote---may be needed.
+
+R Package | Capabilities
+--------- | ----------------------------------
+base      | saveRDS, readRDS, writeLines, write.csv
+readr     | write_lines, write_csv
+feather   | Cross R & Python Pandas data.frame storage
+any DB    | RSQLite, RMySQL, RPostgres
+arrow     | Apache Arrow for columnar data
+
+See <https://cloudyr.github.io/packages/> for more cloudy options.
+
+## Tag Useful Information
+
+Tagging useful information requires finding patterns in the underlying text 
+
+R Package | Capabilities
+--------- | ----------------------------------
+stringr   | String manipulation and regular expressions
+udpipe    | Tokenization, POS tagging, lemmatization
+
+## Analyze
+
+R Package    | Capabilities
+------------ | ----------------------------------
+tidytext     | Tidyverse approach to text analytics
+tidylda      | Tidyverse approach to topic modeling
+textrecipies | Text preprocessing and Feature Engineering Steps for Modeling
+
+## Visualize
+
+R Package | Capabilities
+--------- | ----------------------------------
+ggplot2   | General purpose data graphics
+ggraph    | Network visualization
+tidygraph | More network visualization
+igraph    | Network construction (and exploration)
+diffr     | Compare two versions of the same document
+corporaexplorer | Explore your document collection
+
+## Communication Findings
+
+R Package | Capabilities
+--------- | ----------------------------------
+rmarkdown | Language and framework for reproducible document creation
+quarto*   | Latest framework for reproducible document creation
+english   | Converts numerics to English text
+scales    | label_* for format for output
+
+
+
+
+
+# Text Encoding
+<https://www.r-bloggers.com/2016/06/escaping-from-character-encoding-hell-in-r-on-windows/>
+
+<https://kunststube.net/encoding/>
+
+<https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>
+
+## There's No Such This as "Plain Text"
+
+Data---including text---is represented in digital storage as a set of OFFs and ONs---ZEROs and ONEs.
+
+How should those 0s and 1s be interpreted? Are they numbers? Letters? Sounds? Colors? Dates? 
+
+_Character encodings_ are conventions by which the 0s and 1s can be interpreted as text and other symbols.
+
+##
+
+::: {.panel-tabset}
+
+### Common Character Encodings
+  * ASCII
+  * LATIN-1
+  * UTF-8 (Default on most OSes these days)
+  * UTF-8 BOM (Default for MS Excel)
+  * UTF-16BE (_big endian_)
+  * UTF-16LE (_little endian_)
+  * UCS-2 (Windows)
+
+### # Bytes
+
+ASCII and LATIN-1 use a single byte to encode a character
+
+UTF-8 uses 1, 2, 3, or 4 bytes
+
+UTF-16 uses 2, 3, or 4 bytes
+
+The Byte Order Marker (BOM) is a usually invisible pair of bytes (`FF FE` or `FE FF`) at the start of a file indicating whether the byte order is encoded as `00 0a` or `0a 00`. See: 
+  
+### UTF-8 BOM
+
+![](images/plaintext-utf-8-bom.png)
+
+### UTF-8
+
+![](images/plaintext-utf-8.png)
+
+### UTF-16LE
+
+![](images/plaintext-utf-16-LE.png)
+
+### UTF-16BE
+
+![](images/plaintext-utf-16-BE.png)
+
+### Culture
+
+> It began upon the following occasion.
+> 
+> It is allowed on all hands, that the primitive way of breaking eggs before we eat them, was upon the _larger end_: but his present Majesty's grandfather, while he was a boy, going to eat an egg, and breaking it according to the ancient practice, happened to cut one of his fingers. Whereupon the Emperor his father published an edict, commanding all his subjects, upon great penalties, to break the _smaller end_ of their eggs.
+
+Gulliver's Travels (1726)
+:::
+
+##
+
+::: {.panel-tabset}
+### ASCII Table
+
+![](images/ASCII-Table-wide.jpg)
+
+### Recognizable ASCII Codes
+
+Hexadecimal | Character
+----------- | --------------------------------
+00          | NULL... End of File/EOF
+0a          | Line Feed
+0d          | Carriage Return
+20          | Space
+30--39      | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+41--5a      | A, B, C, ..., X, Y, Z
+61--7a      | a, b, c, ..., x, y, z
+77 77 77    | www
+a0          | Non-breaking space
+ef bb bf    | UTF-8 BOM
+fe ff       | UTF-16BE (Big Endian)
+ff fe       | UTF-16LE (Little Endian)
+
+### hexView
+
+A single text file saved from BBEdit using 4 different character encodings.
+
+```{r}
+library(here)
+library(hexView)
+
+viewRaw(here("data-raw", "plaintext-utf-8.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-8-bom.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-16-LE.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-16-BE.csv"))
+
+```
+
+### Code
+
+```{.r}
+library(here)
+library(hexView)
+
+viewRaw(here("data-raw", "plaintext-utf-8.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-8-bom.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-16-LE.csv"))
+
+viewRaw(here("data-raw", "plaintext-utf-16-BE.csv"))
+
+```
+
+:::
+
+
+# Regular Expressions
+<https://www.debuggex.com/>
+
+<https://r4ds.hadley.nz/regexps.html>
+
+
+## Regular Expressions
+
+::: {.panel-tabset .smaller}
+
+### Purpose {.scrollable}
+
+We can exploit patterns that occur in textual data, but we need a language to describe those patterns.
+
+* Regular Expressions (RegEx, RE) are like super-powered find & replace
+* Invented by Stephen Kleene in the 1950s
+* RegExes use the symbols on the standard keyboard to describe **patterns** in textual data
+
+::: {.notes}
+We can exploit patterns that occur in textual data, but we need a language to describe those patterns.
+
+* Every search you've every performed was a regular expression
+* Every word, sentence, paragraph, and document you've ever written followed a regular expression.
+
+For example: the pattern of "three digits followed by a hyphen followed by three digits followed by a hyphen followed by four digits": 123-123-1234.
+
+Some common R functions that use RegEx: grep, grepl, agrep, sub, gsub, stringr::str_*
+:::
+
+### Literals
+
+Generally, letters match themselves and numbers match themselves. Some punctuation marks match themselves
+
+```
+a b c... x y z       lower case English letters
+A B C... X Y Z       upper case English letters
+0 1 2... 7 8 9       digits
+! @ # % & = _ < > ,  punctuation
+```
+
+Pattern           | Matches                                | Does Not Natch
+----------------- | -------------------------------------- | ---------------------
+apple             | apple                                  | applle
+555-1212          | 555-1212                               | 555+1212, 123-1212
+
+### Wildcard
+
+It may be necessary to describe a pattern which one or more characters are unknown.
+
+```
+.     (the period or full-stop character) stands for any single character
+```
+
+Pattern           | Matches                                        | Does Not Natch
+----------------- | ---------------------------------------------- | ------------------------------
+c.t               | cat, cbt, cct, ... c1t, c2t, ..., c#t          | caat, ct
+app.e             | apple, appbe, appce, appde, ...                | applle
+555.1212          | 555-1212, 555+1212, 555x1212                   | 123-1212
+
+
+### Quantifiers
+
+It may be necessary to describe patterns where a symbol or set of symbols repeats: "five digits"
+
+```
+{m,n} at least m and as many as n of the previous element
+?     zero or one of the previous element    {0,1}
+*     zero or more of the previous element   {0, }  known as the Kleene Star
++     one or more of the previous element    {1, }
+```
+
+Pattern           | Matches                                         | Does Not Natch
+----------------- | ----------------------------------------------  | ------------------------------
+c.?t              | ct, cat, cat, cbt, cct, ... c1t, c2t, ..., c#t  | caat
+c.{2,3}t          | caat, c11t, c##t, caaat, c123t, ...             | ct, cat, caaaat, ...
+app.+e            | apple, appbe, appce, appde, ..., appllllle, appabcdefghie | ae, ...
+
+
+### Grouping
+
+It may be necessary to indicate a group of options. For example, "the English vowels".
+
+```
+[ ]    any one of the enclosed characters
+[^ ]   none of the enclosed characters
+( )    all of the enclosed characters
+( | )  either all of the first part or all of the second part of enclosed characters
+
+```
+
+Pattern           | Matches                                        | Does Not Natch
+----------------- | ---------------------------------------------- | ------------------------------
+`c[aeiou]t`       | cat, cet, cit, cot, cut                        | cbt, c2t, c#t
+`c[^aeiou]t`      | cbt, cct, cdt, cft, cgt... c1t, c2t, c#t...    | cat, cet, cit, cot, cut
+`c(a|anno)t`      | cat, cannot                                    | cant, cannt, cbt, cct
+`c[-+]t`          | c-t, c+t                                       | cat, cbt, c2t, c#t
+`c[a-z]t`         | cat, cbt, cct, cdt, cet...                     | c2t, c#t
+
+::: {.notes}
+* A hyphen, when it's the first character inside [ ], means a literal hyphen 
+* A hyphen, when it's other than the first character inside [ ], means a range of symbols: 0-9, a-z 
+:::
+
+### Anchors
+
+It may be necessary to find a pattern only when it appears at the start or end of a line.
+
+```
+^    the start of a line of text
+$    the end of a line of text
+```
+
+### Escapes
+
+The backslash \ is used to _escape_ the meaning of a character. For example, if you wanted to match a literal question mark how would yo do it? Remember: the question mark is used as a quantifier meaning _zero or one of the previous element_.
+
+```
+\r     carriage return (ASCII 13)
+\n     newline/line feed (ASCII 10)
+\t     tab (ASCII 9)
+\b     word boundary (start or end of line, punctuation, whitespace)
+\d     a single digit (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+\s     whitespace (usually includes \r \n \t or a space)
+\\     literal backslash
+\(     literal opening parenthesis
+\[     literal opening square bracket
+\{     literal opening brace
+```
+
+### Exercise
+
+Create a regular expression to match each of the following and that matches only the intended pattern.
+
+* five letter words
+* words that begin with a capital letter
+* phone number
+* social security number
+* email addresses or social media handles, etc.
+* likely variations on the word PASSWORD
+
+### Counterexamples
+
+Regular Expressions generally don't have _memory_. So, any pattern that requires remembering an earlier part of the pattern it out of scope.
+
+* matching parentheses, braces, brackets, quotation marks, etc.
+* the same number of letters before as after
+* digits that sum to a given value
+* words that start and end with the same character
+
+
+:::
+
+
+
+
+<!---- CLEANING NAMES ------------------------------------------------->
+
+# Using humaniformat to Clean Human Names
+
+##
+::: {.panel-tabset}
+
+### Code
+```{.r}
+suppressPackageStartupMessages({
+  library(janitor)
+  
+  library(stringr)
+  library(humaniformat)
+  
+  library(tidylda)
+})
+
+nih_sample
+
+pis <- 
+  nih_sample |>
+  select(PI_NAMEs) |> 
+  magrittr::set_colnames("pi_names") 
+
+pis <- 
+  pis |> 
+  mutate(pi_names = str_split(pi_names, ";")) |> 
+  unnest(pi_names) |> 
+  filter(str_trim(pi_names) != "") |> 
+  
+  mutate(pi_names = str_replace(pi_names, " \\(contact\\)", "")) |> 
+  
+  mutate(pi_names = format_reverse(pi_names))
+
+pis
+
+parse_names(pis$pi_names)
+```
+
+### NIH Awards Data
+```{r}
+suppressPackageStartupMessages({
+  library(janitor)
+  
+  library(stringr)
+  library(humaniformat)
+  
+  library(tidylda)
+})
+
+nih_sample
+```
+
+### pi_names
+```{r}
+pis <- 
+  nih_sample |>
+  select(PI_NAMEs) |> 
+  magrittr::set_colnames("pi_names") 
+
+print(pis, n = 100)
+```
+
+### Cleaned
+```{r}
+pis <- 
+  pis |> 
+  mutate(pi_names = str_split(pi_names, ";")) |> 
+  unnest(pi_names) |> 
+  filter(str_trim(pi_names) != "") |> 
+  
+  mutate(pi_names = str_replace(pi_names, " \\(contact\\)", "")) |> 
+  
+  mutate(pi_names = format_reverse(pi_names))
+
+print(pis, n = 100)
+```
+
+### Parsed
+```{r}
+parse_names(pis$pi_names)
+```
+
+
+
+
+
+
+
+:::
+
+
+
+
+
+
+<!---- FEDERAL REGISTER ----------------------------------------------->
+
+# Using the Federal Register
+<https://www.federalregister.gov/>
+
+<https://www.federalregister.gov/developers/documentation/api/v1>
+
+##
+
+::: {.panel-tabset}
+
+### Federal Register Web Interface
+
+![FederalRegister.gov](images/fr-website.jpg)(https://FederalRegister.gov)
+
+### Web Scraping Federal Register
+
+![FederalRegister.gov Blocks Scraping](images/fr-non-api-error.jpg)
+
+### API Access to Federal Register
+
+![FederalRegister.gov API](images/fr-api.jpg)(https://www.federalregister.gov/developers/documentation/api/v1)
+
+:::
+
+
+# Getting a List of Federal Agencies via API
+<https://www.federalregister.gov/developers/documentation/api/v1>
+
+## 
+
+::: {.panel-tabset}
+
+### Code
+```{.r}
+library(httr)
+library(jsonlite)
+
+library(dplyr)
+
+agencies <- GET("https://www.federalregister.gov/api/v1/agencies")
+
+str(agencies)
+
+txt <- content(agencies, as = "text")
+
+print(txt)
+
+cat(txt)
+
+prettify(txt)
+
+agencies_df <- 
+  content(agencies, as = "text") |>
+  fromJSON() |>
+  as_tibble()
+
+head(agencies_df)
+
+names(agencies_df)
+
+agencies_df |>
+  select(short_name, name)
+
+```
+
+### str
+```{r}
+library(httr)
+library(jsonlite)
+
+agencies <- GET("https://www.federalregister.gov/api/v1/agencies")
+
+str(agencies)
+
+```
+
+### print
+```{r}
+txt <- content(agencies, as = "text")
+print(txt, width = 120)
+```
+
+### cat
+```{r}
+cat(txt)
+```
+
+### prettify
+```{r}
+prettify(txt)
+```
+
+### head
+```{r}
+agencies_df <- 
+  content(agencies, as = "text") |>
+  fromJSON() |>
+  as_tibble()
+
+head(agencies_df)
+```
+
+### names
+```{r}
+names(agencies_df)
+```
+
+### final
+```{r}
+agencies_df <- 
+  agencies_df %>% 
+  select(short_name, name) 
+
+agencies_df |> 
+  print(n = 200)
+```
+
+
+:::
+
+
+
+
+
+
+# Getting a Presidential Executive Order via API
+<https://www.federalregister.gov/presidential-documents/executive-orders>
+
+<https://www.federalregister.gov/presidential-documents/executive-orders/joe-biden/2022>
+
+<https://www.federalregister.gov/documents/2022/10/19/2022-22834/lowering-prescription-drug-costs-for-americans>
+
+##
+
+::: {.panel-tabset}
+
+### Code
+
+```{.r}
+suppressPackageStartupMessages({
+  library(here)
+  library(hexView)
+  
+  library(purrr)
+  library(tidyr)
+  library(dplyr)
+  
+  library(httr)
+  library(rvest)
+  
+  library(stringr)
+  
+  library(RSQLite)
+})
+
+out_path <- here("data-raw", "eos")
+dir.create(out_path, recursive = TRUE, showWarnings = FALSE)
+
+out_file <- here(out_path, "2022-22834")
+
+if (!file.exists(out_file)) {
+  GET(
+    "https://www.federalregister.gov/documents/full_text/text/2022/10/19/2022-22834.txt",
+    write_disk(out_file)
+  ) 
+}
+
+# What is _really_ in the file?
+viewRaw(out_file, nbytes = 500) 
+
+read_html(out_file) |>
+  html_node("body") |> 
+  html_text() 
+
+cat(.Last.value)
+
+# Unit of analysis: Sentences ---------------------------------------------
+
+txt <- 
+  read_html(out_file) |>
+  html_node("body") |> 
+  html_text() |> 
+  str_replace_all("[\n ]+", " ") 
+
+sents <-
+  data.frame(source = basename(out_file), data = txt) |> 
+  mutate(data = str_split(data, "\\. ")) |> 
+  unnest(data) |> 
+  mutate(
+    seq = row_number(),
+    date_added = as.character(Sys.Date())
+  )
+
+# Unit of analysis: Paragraphs --------------------------------------------
+
+txt <- 
+  read_html(out_file) |>
+  html_node("body") |> 
+  html_text() |> 
+  str_replace_all("[ ]+", " ") 
+
+paras <- 
+  data.frame(source = basename(out_file), data = txt) |> 
+  mutate(data = str_split(data, "[\n]{2,}")) |> 
+  unnest(data) |> 
+  mutate(data = str_replace_all(data, "[\n ]+", " ")) |> 
+  mutate(data = str_trim(data)) |> 
+  mutate(
+    seq = row_number(),
+    date_added = as.character(Sys.Date())
+  )
+
+# Persist data ------------------------------------------------------------
+# https://github.com/hadley/r4ds/blob/main/databases.qmd
+
+con <- dbConnect(SQLite(), here("data", "eo-one.sqlite"))
+
+dbWriteTable(con, "sentences", sents, append = TRUE)
+dbWriteTable(con, "paragraphs", paras, append = TRUE)
+
+dbListTables(con)
+
+dbListFields(con, "sentences")
+
+sql <- "
+  SELECT * 
+  FROM sentences 
+  WHERE seq % 2 = 0
+"
+
+dbGetQuery(con, sql) |> as_tibble()
+
+dbDisconnect(con)
+
+```
+
+### viewRaw
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(hexView)
+  
+  library(purrr)
+  library(tidyr)
+  library(dplyr)
+  
+  library(httr)
+  library(rvest)
+  
+  library(stringr)
+  
+  library(RSQLite)
+})
+
+out_path <- here("data-raw", "eos")
+dir.create(out_path, recursive = TRUE, showWarnings = FALSE)
+
+out_file <- here(out_path, "2022-22834")
+
+if (!file.exists(out_file)) {
+  GET(
+    "https://www.federalregister.gov/documents/full_text/text/2022/10/19/2022-22834.txt",
+    write_disk(out_file)
+  ) 
+}
+
+viewRaw(out_file, nbytes = 500) 
+```
+
+### html_text
+```{r}
+txt <- 
+  read_html(out_file) |>
+  html_node("body") |> 
+  html_text() 
+
+txt
+```
+
+### cat
+```{r txt-cat}
+cat(txt)
+```
+
+### sents
+```{r parse-sents}
+txt <- 
+  read_html(out_file) |>
+  html_node("body") |> 
+  html_text() |> 
+  str_replace_all("[\n ]+", " ") 
+
+sents <-
+  data.frame(source = basename(out_file), data = txt) |> 
+  mutate(data = str_split(data, "\\. ")) |> 
+  unnest(data) |> 
+  mutate(
+    seq = row_number(),
+    date_added = as.character(Sys.Date())
+  )
+
+sents
+```
+
+### paras
+```{r parse-paras}
+txt <- 
+  read_html(out_file) |>
+  html_node("body") |> 
+  html_text() |> 
+  str_replace_all("[ ]+", " ") 
+
+paras <- 
+  data.frame(source = basename(out_file), data = txt) |> 
+  mutate(data = str_split(data, "[\n]{2,}")) |> 
+  unnest(data) |> 
+  mutate(data = str_replace_all(data, "[\n ]+", " ")) |> 
+  mutate(data = str_trim(data)) |> 
+  mutate(
+    seq = row_number(),
+    date_added = as.character(Sys.Date())
+  )
+
+paras
+```
+
+### tables
+```{r list-tables}
+con <- dbConnect(SQLite(), here("data", "eo-one.sqlite"))
+
+dbWriteTable(con, "sentences", sents, append = TRUE)
+dbWriteTable(con, "paragraphs", paras, append = TRUE)
+
+dbListTables(con)
+```
+
+### fields
+```{r list-fields}
+dbListFields(con, "sentences")
+```
+
+### query
+```{r sql-query}
+sql <- "
+  SELECT * 
+  FROM sentences 
+  WHERE seq % 2 = 0
+"
+
+dbGetQuery(con, sql) |> as_tibble()
+```
+
+```{r disconnect}
+dbDisconnect(con)
+```
+:::
+
+
+
+# Getting a Set of Presidential Executive Orders via API
+
+##
+
+::: {.panel-tabset}
+
+### Code
+```{.r}
+# https://www.federalregister.gov/presidential-documents/executive-orders
+# https://www.federalregister.gov/developers/documentation/api/v1
+
+suppressPackageStartupMessages({
+  library(here)
+  library(hexView)
+  
+  library(purrr)
+  library(tidyr)
+  library(dplyr)
+  library(readr)
+  
+  library(httr)
+  library(rvest)
+  
+  library(stringr)
+  
+  library(RSQLite)
+})
+
+# Get the summary list of EOs via API -------------------------------------
+
+out_file <- here("data-raw", "all_eos.csv")
+
+if (!file.exists(out_file)) {
+  message("Downloading EOs list...")
+  
+  GET(
+    "https://www.federalregister.gov/api/v1/documents.csv?fields[]=document_number&fields[]=raw_text_url&fields[]=president&fields[]=publication_date&fields[]=title&fields[]=topics&per_page=1000&page=1&order=executive_order_number&conditions[type][]=PRESDOCU&conditions[presidential_document_type][]=executive_order",
+    write_disk(out_file)
+  )
+}
+
+# What is _really_ in the file?
+viewRaw(out_file, nbytes = 500)
+
+eos <- read_csv(out_file) # notice the underscore... this is from readr::
+
+nrow(eos)
+
+# Is that _all_ of the EOs?
+
+
+# Harvest -----------------------------------------------------------------
+
+out_path <- here("data-raw", "eos")
+dir.create(out_path, recursive = TRUE, showWarnings = FALSE)
+
+pwalk(eos, function(...) {
+  args <- list(...)
+  
+  out_file <- here(out_path, str_trim(args$document_number))
+  
+  if (!file.exists(out_file)) {
+    message(args$document_number)
+    GET(args$raw_text_url, write_disk(out_file))
+    Sys.sleep(0.25)
+  }
+})
+
+# What is _really_ in the files?
+out_file <- here(out_path, str_trim(eos[1, "document_number"]))
+
+viewRaw(out_file, nbytes = 500)
+
+# Preprocess downloaded files ---------------------------------------------
+# https://github.com/hadley/r4ds/blob/main/databases.qmd
+
+filenames <- list.files(out_path, full.names = TRUE)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+walk(filenames, function(filename) {
+  message(basename(filename))
+  
+  txt <- 
+    read_html(filename) |>
+    html_node("body") |> 
+    html_text()
+  
+  sents <-
+    str_replace_all(txt, "[\n ]+", " ") |> 
+    
+    # Using R4.0+ anonymous lambda function
+    (\(d) data.frame(source = basename(filename), data = d))() |> 
+    mutate(data = str_split(data, "\\. ")) |> 
+    unnest(data) |> 
+    mutate(
+      seq = row_number(),
+      date_added = as.character(Sys.Date())
+    )
+  
+  paras <- 
+    str_replace_all(txt, "[ ]+", " ") |> 
+    (\(d) data.frame(source = basename(filename), data = d))() |> 
+    mutate(data = str_split(data, "[\n]{2,}")) |> 
+    unnest(data) |> 
+    mutate(data = str_replace_all(data, "[\n ]+", " ")) |> 
+    mutate(data = str_trim(data)) |> 
+    mutate(
+      seq = row_number(),
+      date_added = as.character(Sys.Date())
+    )
+  
+  dbWriteTable(con, "sentences", sents, append = TRUE)
+  dbWriteTable(con, "paragraphs", paras, append = TRUE)
+})
+
+dbDisconnect(con)
+```
+
+### viewRaw
+
+```{r}
+# https://www.federalregister.gov/presidential-documents/executive-orders
+# https://www.federalregister.gov/developers/documentation/api/v1
+
+suppressPackageStartupMessages({
+  library(here)
+  library(hexView)
+  
+  library(purrr)
+  library(tidyr)
+  library(dplyr)
+  library(readr)
+  
+  library(httr)
+  library(rvest)
+  
+  library(stringr)
+  
+  library(RSQLite)
+})
+
+# Get the summary list of EOs via API -------------------------------------
+
+out_file <- here("data-raw", "all_eos.csv")
+
+if (!file.exists(out_file)) {
+  message("Downloading EOs list...")
+  
+  GET(
+    "https://www.federalregister.gov/api/v1/documents.csv?fields[]=document_number&fields[]=raw_text_url&fields[]=president&fields[]=publication_date&fields[]=title&fields[]=topics&per_page=100&page=1&order=executive_order_number&conditions[type][]=PRESDOCU&conditions[presidential_document_type][]=executive_order",
+    write_disk(out_file)
+  )
+}
+
+# What is _really_ in the file?
+viewRaw(out_file, nbytes = 500)
+```
+
+### head
+
+```{r}
+eos <- 
+  read_csv(out_file) # notice the underscore... this is from readr::
+
+eos
+
+# Is that _all_ of the EOs?
+```
+
+### viewRawDocs
+
+```{r} 
+# Harvest -----------------------------------------------------------------
+
+out_path <- here("data-raw", "eos")
+dir.create(out_path, recursive = TRUE, showWarnings = FALSE)
+
+pwalk(eos, function(...) {
+  args <- list(...)
+  
+  out_file <- here(out_path, str_trim(args$document_number))
+  
+  if (!file.exists(out_file)) {
+    message(args$document_number)
+    GET(args$raw_text_url, write_disk(out_file))
+    Sys.sleep(0.25)
+  }
+})
+
+# What is _really_ in the files?
+out_file <- here(out_path, str_trim(eos[1, "document_number"]))
+
+viewRaw(out_file, nbytes = 500)
+
+```
+
+###  
+```{r}
+
+# Preprocess downloaded files ---------------------------------------------
+
+filenames <- list.files(out_path, full.names = TRUE)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+walk(filenames, function(filename) {
+  txt <- 
+    read_html(filename) |>
+    html_node("body") |> 
+    html_text()
+  
+  sents <-
+    str_replace_all(txt, "[\n ]+", " ") |> 
+    
+    # Using R4.0+ anonymous lambda function
+    (\(d) data.frame(source = basename(filename), data = d))() |> 
+    mutate(data = str_split(data, "\\. ")) |> 
+    unnest(data) |> 
+    mutate(
+      seq = row_number(),
+      date_added = as.character(Sys.Date())
+    )
+  
+  paras <- 
+    str_replace_all(txt, "[ ]+", " ") |> 
+    (\(d) data.frame(source = basename(filename), data = d))() |> 
+    mutate(data = str_split(data, "[\n]{2,}")) |> 
+    unnest(data) |> 
+    mutate(data = str_replace_all(data, "[\n ]+", " ")) |> 
+    mutate(data = str_trim(data)) |> 
+    mutate(
+      seq = row_number(),
+      date_added = as.character(Sys.Date())
+    )
+  
+  dbWriteTable(con, "sentences", sents, append = TRUE)
+  dbWriteTable(con, "paragraphs", paras, append = TRUE)
+})
+
+dbDisconnect(con)
+```
+:::
+
+
+
+
+# Part of Speech Tagging
+
+##
+
+::: {.panel-tabset}
+
+### Code
+```{.r}
+suppressPackageStartupMessages({
+  library(here)
+  library(RSQLite)
+  
+  library(udpipe)
+  
+  library(dplyr)
+})
+
+m_name <- here("udpipe_models", "english-ewt-ud-2.5-191206.udpipe")
+
+if (!file.exists(m_name)) {
+  m_eng <- udpipe_download_model(language = "english-ewt",
+                                 model_dir = here("udpipe_models"))
+}
+
+m_eng <- udpipe_load_model(m_name)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+df <- dbGetQuery(con, "SELECT * FROM paragraphs LIMIT 100")
+
+pmap(df, function(...) {
+  args <- list(...)
+  
+  udpipe_annotate(m_eng, x = args$data) |> 
+    as.data.frame() |> 
+    select(-sentence)
+})
+
+df$pos <- pmap_chr(df, function(...) {
+  args <- list(...)
+  
+  suppressWarnings({
+    udpipe_annotate(m_eng, x = args$data) |> 
+      as.data.frame() |> 
+      select(-sentence) |> 
+      filter(xpos %in% c("CC", "DT", "NN", "NNS", "NNP", "NNPS",
+                         "JJ", "JJR", "JJS")) |> 
+      mutate(pos = str_c(token, "/", xpos)) |> 
+      pull(pos) |> 
+      paste(collapse = " ")
+  })
+})
+
+dbWriteTable(con, "para_pos", df, append = TRUE)
+dbDisconnect(con)
+
+```
+
+### Output
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(RSQLite)
+  
+  library(udpipe)
+  
+  library(dplyr)
+})
+
+m_name <- here("udpipe_models", "english-ewt-ud-2.5-191206.udpipe")
+
+if (!file.exists(m_name)) {
+  m_eng <- udpipe_download_model(language = "english-ewt",
+                                 model_dir = here("udpipe_models"))
+}
+
+m_eng <- udpipe_load_model(m_name)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+df <- dbGetQuery(con, "SELECT * FROM paragraphs LIMIT 100")
+
+pmap(df, function(...) {
+  args <- list(...)
+  
+  suppressWarnings({
+    udpipe_annotate(m_eng, x = args$data) |> 
+      as_tibble() |> 
+      select(-sentence)
+  })
+}) 
+
+df$pos <- pmap_chr(df, function(...) {
+  args <- list(...)
+  
+  suppressWarnings({
+    udpipe_annotate(m_eng, x = args$data) |> 
+      as.data.frame() |> 
+      select(-sentence) |> 
+      filter(xpos %in% c("CC", "DT", "NN", "NNS", "NNP", "NNPS",
+                         "JJ", "JJR", "JJS")) |> 
+      mutate(pos = str_c(token, "/", xpos)) |> 
+      pull(pos) |> 
+      paste(collapse = " ")
+  })
+})
+
+dbWriteTable(con, "para_pos", df, append = TRUE)
+dbDisconnect(con)
+
+```
+
+### POS tags
+Tag | Description | Examples
+--- | ----------- | ---------------------
+CC | Coordinating conjunction | and, or, but
+CD | Cardinal number | one, two, three
+DT | Determiner | a, the
+EX | Existential there | There/EX was a party in progress
+FW | Foreign word | persona/FW non/FW grata/FW
+IN | Preposition or subordinating con | uh, well, yes
+JJ | Adjective | good, bad, ugly
+JJR | Adjective, comparative | better, nicer
+JJS | Adjective, superlative | best, nicest
+
+### POS tags
+Tag | Description | Examples
+--- | ----------- | ---------------------
+LS | List item marker | a., b., 1., 2.
+MD | Modal | can, would, will
+NN | Noun, singular or mass | tree, chair
+NNS | Noun, plural | trees, chairs
+NNP | Proper noun, singular | John, Paul, CIA
+NNPS | Proper noun, plural | Johns, Pauls, CIAs
+
+### POS tags
+Tag | Description | Examples
+--- | ----------- | ---------------------
+PDT | Predeterminer | all/PDT this marble, many/PDT a soul
+POS | Possessive ending | John/NNP 's/POS, the parentss/NNP '/POS distress
+PRP | Personal pronoun | I, you, he
+PRP$ | Possessive pronoun | mine, yours
+RB | Adverb | every, enough, not
+RBR | Adverb, comparative | later
+RBS | Adverb, superlative | latest
+RP | Particle | RP
+SYM | Symbol | CO2
+
+### POS tags
+Tag | Description | Examples
+--- | ----------- | ---------------------
+TO | to | to
+UH | Interjection | uhm, uh
+VB | Verb, base form | go, walk
+VBD | Verb, past tense | walked, saw
+VBG | Verb, gerund or present participle | walking, seeing
+VBN | Verb, past participle | walked, thought
+VBP | Verb, non-3rd person singular pr | walk, think
+VBZ | Verb, 3rd person singular present | walks, thinks
+WDT | Wh-determiner | which, that
+WP | Wh-pronoun | what, who, whom (wh-pronoun)
+WP$ | Possessive wh-pronoun | whose, who (wh-words)
+WRB | Wh-adverb | how, where, why (wh-adverb)
+
+:::
+
+
+
+
+<!---- ANALYZE -------------------------------------------------------->
+
+# Analyze
+
+##
+
+::: {.panel-tabset}
+### Text Analytics
+
+The analysis of textual data, usually without the aid of machine learning. The frequency counts and other metrics constructed from them for the basis for most text analytics and machine learning methods.
+
+### Corpus
+
+A _corpus_ is a collection of related documents. Some corpora contain documents of extremely varied length or types of content.
+
+A corpus often is used for multiple analyses over time and may have additional documents added as new data becomes available.
+
+### Document
+
+A _document_ can be of any length from short social media posts to long, book-length texts. The nature of a document will change based on the types of data you're interesting in analyzing. 
+
+### Utterances
+
+Documents are comprised of _utterances_ which are the unit of analysis. An _utterance_ may be a sentence, paragraph, abstract, chapter, or other meaningful segment of the document..
+
+### Tokens, Terms, or N-grams
+
+The individual words (unigrams) or phrases (bigrams, trigrams, etc.) contained within an utterance. The generic words _tokens_ or _terms_ is used when the length of the phrases is less important. 
+
+The process of breaking a document into tokens is called _tokenization_.
+
+:::
+
+# Frequency Counts
+
+##
+::: {.panel-tabset}
+
+### Code
+```{.r}
+library(RSQLite)
+
+library(tidytext)
+
+library(ggplot2)
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+text_df %>%
+  unnest_tokens(word, data)
+
+text_df %>%
+  unnest_tokens(word, data) |> 
+  count(word, sort = TRUE)
+
+text_df %>%
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  count(word, sort = TRUE)
+
+text_df |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  count(word, sort = TRUE) |> 
+  top_n(40) |> 
+  mutate(word = reorder(word, n)) |> 
+  
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+
+text_df |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) 
+  
+text_df |> 
+  unnest_tokens(word, data, token = "ngrams", n = 2) |> 
+  # anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) 
+
+text_df |> 
+  unnest_tokens(word, data, token = "ngrams", n = 3) |> 
+  # anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) 
+```
+
+### words
+```{r text_analytics}
+library(here)
+library(RSQLite)
+
+library(tidytext)
+
+library(ggplot2)
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+text_df %>%
+  unnest_tokens(word, data) |> 
+  head(200)
+```
+
+### counts
+```{r}
+text_df %>%
+  unnest_tokens(word, data) |> 
+  count(word, sort = TRUE) |> 
+  head(200)
+```
+
+### stop_words
+```{r}
+text_df %>%
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  count(word, sort = TRUE) |> 
+  head(200)
+```
+
+### plot
+```{r}
+text_df |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  count(word, sort = TRUE) |> 
+  top_n(40) |> 
+  mutate(word = reorder(word, n)) |> 
+  
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+
+### top_words
+```{r top_words}
+text_df |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) |> 
+  head(200) |> 
+  as.data.frame()
+```
+
+### top_words
+```{r}
+text_df |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) |> 
+  group_by(source) |> 
+  mutate(words = paste(word, collapse = "; ")) |> 
+  ungroup() |>
+  distinct(source, words) |> 
+  print(n = 200) 
+```
+
+### top_bigrams
+```{r}
+text_df |> 
+  unnest_tokens(word, data, token = "ngrams", n = 2) |> 
+  # anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) |> 
+  head(200) |> 
+  as.data.frame()
+```
+
+### top_trigrams
+```{r}
+text_df |> 
+  unnest_tokens(word, data, token = "ngrams", n = 3) |> 
+  # anti_join(stop_words) |> 
+  group_by(source) |> 
+  count(word, sort = TRUE) |> 
+  top_n(10) |> 
+  ungroup() |> 
+  arrange(source, desc(n)) |> 
+  head(200) |> 
+  as.data.frame()
+```
+
+:::
+
+
+
+
+# Sentimate Analysis
+
+##
+
+::: {.panel-tabset}
+
+### Code
+
+```{.r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(dplyr)
+  
+  library(ggplot2)
+})
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+get_sentiments("afinn")
+get_sentiments("bin")
+get_sentiments("nrc")
+
+nrc <- get_sentiments("nrc")
+
+nrc_trust <- nrc |> 
+  filter(sentiment == "trust")
+
+words_df <- text_df |> 
+  unnest_tokens(word, data) |> 
+  inner_join(nrc_trust)
+
+words_df |> 
+  count(source, sort = TRUE) 
+
+words_df |> 
+  count(source, sort = TRUE) |> 
+  top_n(10) |> 
+  
+  ggplot(aes(n, reorder(source, n))) +
+  geom_col() +
+  labs(y = NULL)
+```
+
+### afinn
+
+```{r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(dplyr)
+  
+  library(ggplot2)
+})
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+get_sentiments("afinn")
+```
+
+### bin
+```{r}
+get_sentiments("bin")
+```
+
+### nrc
+```{r}
+get_sentiments("nrc")
+
+nrc <- get_sentiments("nrc")
+```
+
+### nrc_trust
+```{r}
+nrc_trust <- nrc |> 
+  filter(sentiment == "trust")
+
+words_df <- text_df |> 
+  unnest_tokens(word, data) |> 
+  inner_join(nrc_trust)
+
+words_df
+```
+
+### most trusted
+```{r}
+words_df |> 
+  count(source, sort = TRUE) 
+```
+
+### top_10 trusted
+```{r}
+words_df |> 
+  count(source, sort = TRUE) |> 
+  top_n(10) |> 
+  
+  ggplot(aes(n, reorder(source, n))) +
+  geom_col() +
+  labs(y = NULL)
+
+```
+
+:::
+
+
+
+
+
+
+# Topic Modeling
+
+## Topic Modeling
+::: {.panel-tabset}
+
+### TF
+
+TM builds on _term-frequency_ or _TF_ data of the type we've been creating: frequency counts of the number of times each term appears in a document or across documents.
+
+TF is the relative frequency of a term within a document. That is, for any given term, the frequency of the term divided by the number of terms in the document.
+
+### IDF
+
+To this, we add the notion of _inverse document frequency_ or _IDF_. IDF decreases the weight of terms that occur frequently in a corpus and increases the weight of terms that occur rarely. For example, "of" is a common term and doesn't carry much information. We probably shouldn't pay much attention to such common terms.
+
+IDF is a measure of whether a term is common or rare in a given corpus.
+
+### TF-IDF
+
+The term-frequency times the inverse document frequency.
+
+Plainly: the number of times a given term occurs in a document times the log ratio of the number of documents to the number of documents in which the term appears.
+
+
+See <https://www.sciencedirect.com/topics/computer-science/inverse-document-frequency>
+
+### LDA
+
+* Every document is a mixture of topics.
+* Every topic is a mixture of terms.
+
+Latent Dirichlet allocation is a method for "finding the mixture of words that is associated with each topic, while also determining the mixture of topics that describes each document." [Text Mining with R](https://www.tidytextmining.com/topicmodeling.html)
+
+This approach sometimes referred to as the _bag of words_ model.
+
+:::
+
+##
+
+::: {.panel-tabset}
+
+### Code
+```{.r}
+# https://github.com/TommyJones/tidylda
+suppressPackageStartupMessages({
+  library(janitor)
+  library(stringr)
+  library(tidytext)
+  library(ggplot2)
+  library(tidylda)
+  library(Matrix)
+})
+
+docs <- tidylda::nih_sample 
+
+tidy_docs <- 
+  docs |> 
+  clean_names() |> 
+  select(application_id, abstract_text) |> 
+  unnest_tokens(output = word, 
+                input = abstract_text,
+                stopwords = stop_words$word,
+                token = "ngrams",
+                n_min = 1, n = 2) |> 
+  count(application_id, word) |> 
+  filter(n > 1) |> 
+  
+  filter(!str_detect(word, "^[0-9]+$")) 
+
+colnames(tidy_docs)[1:2] <- c("document", "term")
+
+d <- 
+  tidy_docs %>% 
+  cast_sparse(document, term, n)
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202211)
+
+# LDA is a probabilistic algorithm
+lda <- tidylda(
+  data = d,
+  k = 10,
+  iterations = 200, 
+  burnin = 175,
+  alpha = 0.1, # prior for topics over documents
+  eta = 0.05,  # prior for words over topics
+  optimize_alpha = FALSE, # experimental
+  calc_likelihood = TRUE,
+  calc_r2 = TRUE, # see https://arxiv.org/abs/1911.11061
+  return_data = FALSE
+)
+
+ggplot(aes(iteration, log_likelihood), data = lda$log_likelihood) +
+  geom_line() +
+  ggtitle("Model Convergence") +
+  ylab(NULL)
+
+lda
+
+tidy(lda, matrix = "theta")   # P(topic|document)
+tidy(lda, matrix = "beta")    # P(token|topic)
+tidy(lda, matrix = "lambda")  # P(topic|token)
+
+tidy(lda, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta))
+
+tidy(lda, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta)) |> 
+  ungroup() |> 
+  arrange(topic)
+```
+
+### Awards
+
+```{r}
+# https://github.com/TommyJones/tidylda
+suppressPackageStartupMessages({
+  library(janitor)
+  library(stringr)
+  library(tidytext)
+  library(ggplot2)
+  library(tidylda)
+  library(Matrix)
+})
+
+docs <- tidylda::nih_sample 
+
+docs
+```
+
+### Text
+```{r}
+tidy_docs <- 
+  docs |> 
+  clean_names() |> 
+  select(application_id, abstract_text) 
+
+tidy_docs
+```
+
+### Terms
+```{r}
+tidy_docs <- 
+  tidy_docs |> 
+  unnest_tokens(output = word, 
+                input = abstract_text,
+                stopwords = stop_words$word,
+                token = "ngrams",
+                n_min = 1, n = 2) |> 
+  count(application_id, word) |> 
+  filter(n > 1) |> 
+  
+  filter(!str_detect(word, "^[0-9]+$")) 
+
+colnames(tidy_docs)[1:2] <- c("document", "term")
+
+tidy_docs
+```
+
+### Converg.
+```{r}
+d <- 
+  tidy_docs %>% 
+  cast_sparse(document, term, n)
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202211)
+
+# LDA is a probabilistic algorithm
+lda <- tidylda(
+  data = d,
+  k = 10,
+  iterations = 200, 
+  burnin = 175,
+  alpha = 0.1, # prior for topics over documents
+  eta = 0.05,  # prior for words over topics
+  optimize_alpha = FALSE, # experimental
+  calc_likelihood = TRUE,
+  calc_r2 = TRUE, # see https://arxiv.org/abs/1911.11061
+  return_data = FALSE
+)
+
+ggplot(aes(iteration, log_likelihood), data = lda$log_likelihood) +
+  geom_line() +
+  ggtitle("Model Convergence") +
+  ylab(NULL)
+```
+
+### lda
+```{r}
+
+lda
+
+```
+
+### summary
+```{r}
+
+lda$summary
+
+```
+
+
+
+### theta
+P(topic|document)
+```{r}
+tidy(lda, matrix = "theta") |>   # P(topic|document)
+  print(n = 150)
+```
+
+### beta
+P(token|topic)
+```{r}
+tidy(lda, matrix = "beta") |>    # P(token|topic)
+   print(n = 150)
+```
+
+### lambda
+P(topic|token)
+```{r}
+tidy(lda, matrix = "lambda") |>  # P(topic|token)
+   print(n = 150)
+```
+
+### doc-topic
+
+```{r}
+tidy(lda, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta)) |> 
+  print(n = 150)
+```
+
+### topics
+```{r}
+tidy(lda, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta)) |> 
+  ungroup() |> 
+  arrange(topic) |> 
+  print(n = 150)
+```
+
+
+:::
+
+
+<!---- VISUALIZATION -------------------------------------------------->
+
+# Visualiation
+
+## Bigram Relationships
+
+::: {.panel-tabset}
+### Network
+```{r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(RSQLite)
+  library(dplyr)
+  
+  library(igraph)
+  library(ggraph)
+})
+
+theme_set(theme_bw())
+
+`%!in%` <- Negate(`%in%`)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+bigrams <- 
+  text_df |> 
+  filter(source == "2022-22834") |> 
+  unnest_tokens(bigram, data, token = "ngrams", n = 2) |> 
+  separate(bigram, c("word1", "word2"), sep = " ") |> 
+  filter(
+    word1 %!in% stop_words$word,
+    word2 %!in% stop_words$word,
+    !is.na(word1),
+    !is.na(word2),
+    !str_detect(word1, "^\\d+$"),
+    !str_detect(word2, "^\\d+$")
+  ) 
+
+bigram_counts <- 
+  bigrams |> 
+  count(word1, word2, sort = TRUE)  
+
+bigram_graph <- 
+  bigram_counts %>%
+  filter(n > 1) %>%
+  graph_from_data_frame()
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202211)
+
+# The "fr" layout is probabilistic
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(alpha = n), show.legend = FALSE) +
+  geom_node_point(color = "lightblue", size = 4) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+```
+
+### Code
+```{.r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(RSQLite)
+  library(dplyr)
+  
+  library(igraph)
+  library(ggraph)
+})
+
+theme_set(theme_bw())
+
+`%!in%` <- Negate(`%in%`)
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+bigrams <- 
+  text_df |> 
+  filter(source == "2022-22834") |> 
+  unnest_tokens(bigram, data, token = "ngrams", n = 2) |> 
+  separate(bigram, c("word1", "word2"), sep = " ") |> 
+  filter(
+    word1 %!in% stop_words$word,
+    word2 %!in% stop_words$word,
+    !is.na(word1),
+    !is.na(word2),
+    !str_detect(word1, "^\\d+$"),
+    !str_detect(word2, "^\\d+$")
+  ) 
+
+bigram_counts <- 
+  bigrams |> 
+  count(word1, word2, sort = TRUE)  
+
+bigram_graph <- 
+  bigram_counts %>%
+  filter(n > 1) %>%
+  graph_from_data_frame()
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202211)
+
+# The "fr" layout is probabilistic
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(alpha = n), show.legend = FALSE) +
+  geom_node_point(color = "lightblue", size = 4) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+```
+:::
+
+
+
+
+## wordcloud
+
+::: {.panel-tabset}
+### wordcloud
+```{r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(RSQLite)
+  library(dplyr)
+  
+  library(wordcloud)
+})
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+text_df |> 
+  filter(source == "2022-22834") |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+
+  count(word, sort = TRUE) |>
+  with(wordcloud(word, n))
+
+```
+
+### Code
+```{.r}
+suppressPackageStartupMessages({
+  library(tidytext)
+  
+  library(RSQLite)
+  library(dplyr)
+  
+  library(wordcloud)
+})
+
+theme_set(theme_bw())
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+text_df <- dbGetQuery(con, "SELECT source, seq, data FROM paragraphs")
+
+dbDisconnect(con)
+
+text_df |> 
+  filter(source == "2022-22834") |> 
+  unnest_tokens(word, data) |> 
+  anti_join(stop_words) |> 
+
+  count(word, sort = TRUE) |>
+  with(wordcloud(word, n))
+
+```
+:::
+
+## diffr
+
+::: {.panel-tabset}
+
+### App
+
+![diffr Shiny app screenshot](images/diffr.jpg)
+
+### Code
+```{.r}
+library(diffr)
+
+v1 <- textConnection("
+R, or r, is the 18th letter of the modern English alphabet and the ISO basic Latin alphabet. Its name in English is ar (pronounced /ˈɑːr/), plural ars,[1] or in Ireland or /ˈɔːr/.[2]
+")
+
+v2 <- textConnection("
+R, or r, is the eighteenth letter of the Latin alphabet, used in the modern English alphabet, the alphabets of other western European languages and others worldwide. Its name in English is ar (pronounced /ˈɑːr/), plural ars,[1] or in Ireland or /ˈɔːr/.[2]
+
+The letter ⟨r⟩ is the eighth most common letter in English and the fourth-most common consonant (after ⟨t⟩, ⟨n⟩, and ⟨s⟩).[3]
+
+The letter ⟨r⟩ is used to form the ending \"-re\", which is used in certain words such as centre in some varieties of English spelling, such as British English. Canadian English also uses the \"-re\" ending, unlike American English, where the ending is usually replaced by \"-er\" (center). This does not affect pronunciation.
+")
+
+diffr(v1, v2, before = "Version 1", after = "Version 2")
+```
+
+
+
+:::
+
+## corporaexplorer
+
+::: {.panel-tabset}
+
+### App
+
+![corporaexplorer Shiny app screenshot](images/corporaexplorer.jpg)
+
+### Code
+A Shiny app to help you discover patterns across your documents.
+
+```{.r}
+install.packages(c("corporaexplorer", "sotu", "janeaustinr"))
+library(corporaexplorer)
+run_sotu_app()
+```
+
+
+:::
+
+
+
+
+
+
+
+
+
+
+# Communicate Findings
+
+Communicating your findings in a reproducible way is important. You will need to run, re-run, and re-re-run your analyses. Perhaps the data has changed or your methods or your analytical approach.
+
+This entire presentation---including code and the executed results---was created using [Quarto](https://quarto.org), which is included with the latest RStudio releases.
+
+# Communicate Findings
+
+* Create an RStudio project for each analysis effort
+* Create a `README.md` file to document the purpose and history of your project
+* Keep a read-only version of your source data in `data-raw`
+* Keep modified and extracted data in `data`
+* Keep scripts in `R`
+* Keep Quarto documents in `quarto`
+* Keep generated graphics, MS Word and Excel documents, etc. in `output`
+
+# Communicate Findings
+
+* Use scales::label_* to format numeric values (%, $, etc.) when needed
+* Use english::english() to convert numeric values to text when needed
+* Use ggplot2::theme_bw() to create a standard, minimal look & feel
+* Use ggplot2::ggsave() to generate images at high resolution and the intended dimensions
+
+# Communicate Findings
+
+* Develop a habit of restarting your R session often
+  * Your analyses should be able to run from beginning to end in a clean environment
+* Consider using version control software, such as GIT
+* When working with text in the R Console, clear the console often
+  * Large text output to the console may slow down your computer
+
+
+
+
+
+
+# Resources
+
+## General R-based
+* <https://r4ds.had.co.nz/>
+* <https://quarto.org/>
+* <https://ggplot2-book.org/>
+* <https://textrecipes.tidymodels.org/index.html>
+
+## Text Analytics/NLP (R-based)
+* <https://www.tidytextmining.com/>
+* <https://github.com/TommyJones/tidylda>
+
+## David Robinson Tidy Tuesday
+* <https://www.youtube.com/watch?v=-5HYdBq_PTM>
+* <https://www.youtube.com/watch?v=_IvAubTDQME>
+* <https://www.youtube.com/watch?v=EYuuAGDeGrQ>
+* <https://www.youtube.com/watch?v=tCa2di7aEP4>
+* <https://www.youtube.com/watch?v=KE9ItC3doEU>
+
+## Papers {.smaller}
+* POS-Tagging and Syntactic Parsing with R <https://ladal.edu.au/tagging.html>
+* <https://cran.r-project.org/web/packages/incidentally/vignettes/congress.html>
+* <https://cran.r-project.org/web/views/NaturalLanguageProcessing.html>
+* Gjerde, Kristian Lundby. 2019. "corporaexplorer: An R package for dynamic exploration of text collections." Journal of Open Source Software 4 (38): 1342. <https://doi.org/10.21105/joss.01342>.
+* <https://cran.r-project.org/web/packages/incidentally/vignettes/congress.html>
+
+## Python-based
+* <https://github.com/amaiya/ktrain>
+* <https://arxiv.org/abs/2201.07105>
+  * <https://github.com/wri-dssg-omdena/policy-data-analyzer>
+
+## Other
+* <https://www.usa.gov/federal-agencies>
+* <https://www.federalregister.gov/developers/documentation/api/v1>
+* <https://data.gov>
+* <https://datascienceatthecommandline.com/2e/>
+* <https://www2.deloitte.com/us/en/insights/focus/cognitive-technologies/natural-language-processing-examples-in-government-data.html>
+
+
+## Potential Data Sources 
+* <https://arxiv.org>
+* <https://www.nsf.gov/awardsearch/>
+* <https://report.nih.gov/>
+* <https://www.regulations.gov/>
+* <https://www.federalregister.gov/>
+* <https://www.federalregister.gov/presidential-documents/executive-orders>
+* <https://www.usaspending.gov/>
+
+## Potential Data Sources 
+* <https://plos.org/text-and-data-mining/>
+* RSS feeds (consider [tidyRSS](https://github.com/RobertMyles/tidyrss))
+* Conference papers
+* [Web of Science](https://clarivate.com/webofsciencegroup/solutions/web-of-science/)
+* [Scopus](https://www.scopus.com/home.uri)
+* Websites (consider [httr](https://github.com/r-lib/httr) and [rvest](https://github.com/tidyverse/rvest))
+
+
+# Session Information
+
+##  Session Information
+
+```{r}
+devtools::session_info()
+```
+
+
+
+
+
+
+
