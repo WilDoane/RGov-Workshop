@@ -398,88 +398,6 @@ Tools such as [RMarkdown](https://rmarkdown.rstudio.com/) and the newer and more
 
 
 
-# R Packages
-
-## Acquire (and Archive) Raw Data
-
-May methods for acquiring data also have built-in ways to write the results to disk.
-
-R Package | Capabilities
---------- | ----------------------------------
-httr      | Low-level HTTP operations
-rvest     | Higher-level HTML and XML operations
-tidyRSS   | For well-structured RSS 
-utils     | Base R download.file() function
-purrr     | Functional programming-style iteration
-aRxiv     | Wrapper for the arXiv API
-
-## Clean Raw Data
-
-R Package | Capabilities
---------- | ----------------------------------
-hexView   | Low-level file content inspection
-base      | readLines, read.csv
-readr     | read_lines, read_csv
-dplyr     | Manipulation of data.frames
-tidyr     | widen or lengthen data (c -> r, r -> c)
-stringr   | String manipulation and regular expressions
-iconv     | Low-level text encoding operations
-humaniformat | Standardize human names
-
-## Persist Clean Data
-
-How you persist your data is task-dependent. For smaller-scale tasks, storing your data as flat files might suffice while in larger-scale tasks a database---possibly remote---may be needed.
-
-R Package | Capabilities
---------- | ----------------------------------
-base      | saveRDS, readRDS, writeLines, write.csv
-readr     | write_lines, write_csv
-feather   | Cross R & Python Pandas data.frame storage
-any DB    | RSQLite, RMySQL, RPostgres
-arrow     | Apache Arrow for columnar data
-
-See <https://cloudyr.github.io/packages/> for more cloudy options.
-
-## Tag Useful Information
-
-Tagging useful information requires finding patterns in the underlying text 
-
-R Package | Capabilities
---------- | ----------------------------------
-stringr   | String manipulation and regular expressions
-udpipe    | Tokenization, POS tagging, lemmatization
-
-## Analyze
-
-R Package    | Capabilities
------------- | ----------------------------------
-tidytext     | Tidyverse approach to text analytics
-tidylda      | Tidyverse approach to topic modeling
-textrecipies | Text preprocessing and Feature Engineering Steps for Modeling
-
-## Visualize
-
-R Package | Capabilities
---------- | ----------------------------------
-ggplot2   | General purpose data graphics
-ggraph    | Network visualization
-tidygraph | More network visualization
-igraph    | Network construction (and exploration)
-diffr     | Compare two versions of the same document
-corporaexplorer | Explore your document collection
-
-## Communication Findings
-
-R Package | Capabilities
---------- | ----------------------------------
-rmarkdown | Language and framework for reproducible document creation
-quarto*   | Latest framework for reproducible document creation
-english   | Converts numerics to English text
-scales    | label_* for format for output
-
-
-
-
 
 # Text Encoding
 <https://www.r-bloggers.com/2016/06/escaping-from-character-encoding-hell-in-r-on-windows/>
@@ -859,7 +777,7 @@ parse_names(pis$pi_names)
 
 <!---- FEDERAL REGISTER ----------------------------------------------->
 
-# Using the Federal Register
+library(# Using the Federal Register)
 <https://www.federalregister.gov/>
 
 <https://www.federalregister.gov/developers/documentation/api/v1>
@@ -892,6 +810,7 @@ parse_names(pis$pi_names)
 
 ### Code
 ```{.r}
+library(here)
 library(httr)
 library(jsonlite)
 
@@ -918,13 +837,18 @@ head(agencies_df)
 
 names(agencies_df)
 
-agencies_df |>
+agencies_df <- 
+  agencies_df |>
   select(short_name, name)
 
+saveRDS(agencies_df, here("data", "fr_agencies.rds"))
+
+agencies_df
 ```
 
 ### str
 ```{r}
+library(here)
 library(httr)
 library(jsonlite)
 
@@ -970,6 +894,8 @@ names(agencies_df)
 agencies_df <- 
   agencies_df %>% 
   select(short_name, name) 
+
+saveRDS(agencies_df, here("data", "fr_agencies.rds"))
 
 agencies_df |> 
   print(n = 200)
@@ -1460,6 +1386,138 @@ walk(filenames, function(filename) {
 dbDisconnect(con)
 ```
 :::
+
+
+
+
+
+# Searching for Agency Mentions
+
+##
+
+::: {.panel-tabset}
+
+### Code
+
+```{.r}
+suppressPackageStartupMessages({
+  library(here)
+  library(purrr)
+  library(dplyr)
+  
+  library(RSQLite)
+})
+
+agencies_df <- readRDS(here("data", "fr_agencies.rds"))
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+eos_df <- dbGetQuery(con, "SELECT * FROM paragraphs LIMIT 100")
+
+mentions <-
+  pmap_df(agencies_df, function(...) {
+    args <- list(...)
+    
+    idx <- 
+      str_detect(eos_df$data, regex(args$short_name, ignore_case = TRUE)) |> 
+      which()
+    
+    eos_df |> 
+      slice(idx) |> 
+      select(source, seq) |> 
+      mutate(tag = args$short_name)
+  }) 
+
+mentions
+
+dbWriteTable(con, "mentions", mentions, append = TRUE)
+
+str_detect(eos_df$data, regex("shall", ignore_case = TRUE)) |> 
+  which()
+
+eos_df[.Last.value, "data"]
+
+str_detect(eos_df$data, regex("report", ignore_case = TRUE)) |> 
+  which()
+
+eos_df[.Last.value, "data"]
+
+str_detect(eos_df$data, regex("american", ignore_case = TRUE)) |> 
+  which()
+
+eos_df[.Last.value, "data"]
+
+dbDisconnect(con)
+
+```
+
+### mentions
+
+```{r}
+suppressPackageStartupMessages({
+  library(here)
+  library(purrr)
+  library(dplyr)
+  
+  library(RSQLite)
+})
+
+agencies_df <- readRDS(here("data", "fr_agencies.rds"))
+
+con <- dbConnect(SQLite(), here("data", "eos-many.sqlite"))
+
+eos_df <- dbGetQuery(con, "SELECT * FROM paragraphs LIMIT 100")
+
+mentions <-
+  pmap_df(agencies_df, function(...) {
+    args <- list(...)
+    
+    idx <- 
+      str_detect(eos_df$data, regex(args$short_name, ignore_case = TRUE)) |> 
+      which()
+    
+    eos_df |> 
+      slice(idx) |> 
+      select(source, seq) |> 
+      mutate(tag = args$short_name)
+  }) 
+
+mentions
+```
+
+### shall
+```{r}
+
+dbWriteTable(con, "mentions", mentions, append = TRUE)
+
+str_detect(eos_df$data, regex("shall", ignore_case = TRUE)) |> 
+  which()
+
+```
+
+### report
+```{r}
+str_detect(eos_df$data, regex("report", ignore_case = TRUE)) |> 
+  which()
+
+```
+
+### american
+```{r}
+str_detect(eos_df$data, regex("american", ignore_case = TRUE)) |> 
+  which()
+
+dbDisconnect(con)
+
+```
+
+
+
+:::
+
+
+
+
 
 
 
@@ -2501,6 +2559,97 @@ This entire presentation---including code and the executed results---was created
 * Consider using version control software, such as GIT
 * When working with text in the R Console, clear the console often
   * Large text output to the console may slow down your computer
+
+
+
+
+
+
+
+
+# R Packages
+
+## Acquire (and Archive) Raw Data
+
+May methods for acquiring data also have built-in ways to write the results to disk.
+
+R Package | Capabilities
+--------- | ----------------------------------
+httr      | Low-level HTTP operations
+rvest     | Higher-level HTML and XML operations
+tidyRSS   | For well-structured RSS 
+utils     | Base R download.file() function
+purrr     | Functional programming-style iteration
+aRxiv     | Wrapper for the arXiv API
+
+## Clean Raw Data
+
+R Package | Capabilities
+--------- | ----------------------------------
+hexView   | Low-level file content inspection
+base      | readLines, read.csv
+readr     | read_lines, read_csv
+dplyr     | Manipulation of data.frames
+tidyr     | widen or lengthen data (c -> r, r -> c)
+stringr   | String manipulation and regular expressions
+iconv     | Low-level text encoding operations
+humaniformat | Standardize human names
+
+## Persist Clean Data
+
+How you persist your data is task-dependent. For smaller-scale tasks, storing your data as flat files might suffice while in larger-scale tasks a database---possibly remote---may be needed.
+
+R Package | Capabilities
+--------- | ----------------------------------
+base      | saveRDS, readRDS, writeLines, write.csv
+readr     | write_lines, write_csv
+feather   | Cross R & Python Pandas data.frame storage
+any DB    | RSQLite, RMySQL, RPostgres
+arrow     | Apache Arrow for columnar data
+
+See <https://cloudyr.github.io/packages/> for more cloudy options.
+
+## Tag Useful Information
+
+Tagging useful information requires finding patterns in the underlying text 
+
+R Package | Capabilities
+--------- | ----------------------------------
+stringr   | String manipulation and regular expressions
+udpipe    | Tokenization, POS tagging, lemmatization
+
+## Analyze
+
+R Package    | Capabilities
+------------ | ----------------------------------
+tidytext     | Tidyverse approach to text analytics
+tidylda      | Tidyverse approach to topic modeling
+textrecipies | Text preprocessing and Feature Engineering Steps for Modeling
+
+## Visualize
+
+R Package | Capabilities
+--------- | ----------------------------------
+ggplot2   | General purpose data graphics
+ggraph    | Network visualization
+tidygraph | More network visualization
+igraph    | Network construction (and exploration)
+diffr     | Compare two versions of the same document
+corporaexplorer | Explore your document collection
+
+## Communication Findings
+
+R Package | Capabilities
+--------- | ----------------------------------
+rmarkdown | Language and framework for reproducible document creation
+quarto*   | Latest framework for reproducible document creation
+english   | Converts numerics to English text
+scales    | label_* for format for output
+
+
+
+
+
 
 
 
