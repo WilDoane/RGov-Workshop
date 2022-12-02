@@ -777,7 +777,7 @@ parse_names(pis$pi_names)
 
 <!---- FEDERAL REGISTER ----------------------------------------------->
 
-library(# Using the Federal Register)
+# Using the Federal Register
 <https://www.federalregister.gov/>
 
 <https://www.federalregister.gov/developers/documentation/api/v1>
