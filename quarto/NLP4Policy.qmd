@@ -93,9 +93,10 @@ Pair-share
 ```{r}
 grViz("
   digraph G {
-    node [shape=record];
+    node [shape=record, fontcolor=black, fillcolor=white, style=filled];
+    edge [color=white];
     rankdir='LR'
-    bgcolor = white
+    bgcolor=transparent
 
     'Someone\nhad an idea' ->
     'They conducted\nresearch' ->
@@ -122,9 +123,10 @@ grViz("
 ```{r}
 grViz("
   digraph G {
-    node [shape=record];
+     node [shape=record, fontcolor=black, fillcolor=white, style=filled];
+    edge [color=white];
     rankdir='LR'
-    bgcolor = white
+    bgcolor=transparent
 
     'Define topic' ->
     'Identify literature\non the topic' ->
@@ -250,9 +252,10 @@ See N-gram Language Models. https://web.stanford.edu/~jurafsky/slp3/3.pdf
 ```{r}
 grViz("
   digraph G {
-    node [shape=record];
+    node [shape=record, fontcolor=black, fillcolor=white, style=filled];
+    edge [color=white];
     rankdir='LR'
-    bgcolor = white
+    bgcolor=transparent
   
 'Identify\nData\nSources' ->
 'Acquire\nRaw\nData' ->
@@ -462,6 +465,9 @@ The Byte Order Marker (BOM) is a usually invisible pair of bytes (`FF FE` or `FE
 Gulliver's Travels (1726)
 :::
 
+
+
+
 ##
 
 ::: {.panel-tabset}
@@ -486,9 +492,11 @@ ef bb bf    | UTF-8 BOM
 fe ff       | UTF-16BE (Big Endian)
 ff fe       | UTF-16LE (Little Endian)
 
+There are also some <https://invisible-characters.com/> in Unicode I like to be aware of, but they come up less often: 
+
 ### hexView
 
-A single text file saved from BBEdit using 4 different character encodings.
+A single text file saved from BBEdit using 4 different character encodings. hexView::viewRaw() allows me to inspect the bytes contained in a file without any imposed interpretation: what's really there?
 
 ```{r}
 library(here)
@@ -521,6 +529,66 @@ viewRaw(here("data-raw", "plaintext-utf-16-BE.csv"))
 ```
 
 :::
+
+
+##
+
+::: {.panel-tabset}
+
+### Setting Encoding
+R has two ways to set encoding depending on the claim you're trying to make: either you're saying:
+
+* fileEncoding: "this file is already using the encoding..."
+* encoding: "I want you to re-encode the content to be..."
+
+### read.csv 
+
+Notice that the `<ff><fe>` mentioned in the error message is telling you that you're trying to read a UTF-16 encoded file---and that it's little endian, at that!
+
+Notice also that read.csv stoped reading the file after the first `t` character. That's because read.csv was likely defaulting to ASCII and encountered bytes `FF FE 74 00` and the `00` NULL byte was assumed to mean END OF FILE.
+
+```{.r}
+read.csv(here("data-raw", "plaintext-utf-16-LE.csv"))
+```
+
+```{r}
+try({read.csv(here("data-raw", "plaintext-utf-16-LE.csv"))})
+```
+
+### w/fileEncoding LE
+
+Notice here that the declared fileEncoding _does_ match the saved encoding of the file being read, so we see the expected result:
+
+```{r}
+#| echo: true
+read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), fileEncoding = "UTF-16LE")
+```
+
+### w/fileEncoding BE
+
+Notice here that the declared fileEncoding does _not_ match the saved encoding of the file being read, which leads it interesting results:
+
+```{r}
+#| echo: true
+read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), fileEncoding = "UTF-16BE")
+```
+
+### w/encoding
+
+```{.r}
+read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), encoding = "UTF-16")
+```
+
+```{r}
+try({read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), encoding = "UTF-16")})
+```
+
+
+:::
+
+
+
+
 
 
 # Regular Expressions
@@ -593,6 +661,10 @@ It may be necessary to describe patterns where a symbol or set of symbols repeat
 *     zero or more of the previous element   {0, }  known as the Kleene Star
 +     one or more of the previous element    {1, }
 ```
+:::{.smaller}
+`*` and `+` are _greedy_... they'll match as many characters as then can: c.*t given "catat" will match the full text "catat" since it starts with a c and ends with a t.
+`*?` and `+?` are _lazy_ versions... they'll match as few characters as they can: c.*t given "catat" will match just on the "cat" portion.
+:::
 
 Pattern           | Matches                                         | Does Not Natch
 ----------------- | ----------------------------------------------  | ------------------------------
@@ -2693,6 +2765,7 @@ scales    | label_* for format for output
 * <https://data.gov>
 * <https://datascienceatthecommandline.com/2e/>
 * <https://www2.deloitte.com/us/en/insights/focus/cognitive-technologies/natural-language-processing-examples-in-government-data.html>
+* <https://invisible-characters.com/>
 
 
 ## Potential Data Sources 
