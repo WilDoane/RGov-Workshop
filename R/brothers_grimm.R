@@ -200,7 +200,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   
   count(document, word, sort = TRUE) |> 
   
-  slice_max(n, n = 10, by = document) |>               ###
+  slice_max(n, n = 10, by = document) |>               ### top 10ish terms
   
   arrange(document, desc(n)) |> 
   
@@ -244,7 +244,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   
   count(document, word, sort = TRUE) |> 
   
-  slice_max(n, n = 5, by = document) |>                 ### and now we slice
+  slice_max(n, n = 5, by = document) |>                          ### and now we slice
   
   ggplot() +
   geom_col(aes(x = n, y = reorder_within(word, n, document))) +  ### reorder_within!!
@@ -253,7 +253,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   facet_wrap(.~document,  scales = "free_y")
 
 
-#  Some documents appear to caryy little data
+#  Some documents appear to carry little data
 
 tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
   mutate(document = str_extract(text, rex)) |> 
@@ -277,22 +277,15 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   facet_wrap(.~document,  scales = "free_y")
 
 
-# ID and remove boilerplate
+# Removing boilerplate
 
-tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
-  mutate(document = str_extract(text, rex)) |> 
-  fill(document, .direction = "down") |> 
-  filter(is.not.na(document)) |> 
-  distinct(document)
 
-View(.Last.value)
-
-omit <- c("THE BROTHERS GRIMM FAIRY TALES", "PLEASE READ THIS BEFORE",
+omit <- c("THE BROTHERS GRIMM FAIRY TALES", "PLEASE READ THIS BEFORE",  ###
 "THE FULL PROJECT GUTENBERG", "LIABILITY, BREACH OF WARRANTY",
 "TRADEMARK OWNER", "LIABLE TO YOU FOR ACTUAL",
 "INCIDENTAL DAMAGES", "OTHER WARRANTIES OF ANY KIND")
 
-omit <- paste(omit, collapse = "|") # create a regex
+omit <- paste(omit, collapse = "|")
 
 tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
   mutate(document = str_extract(text, rex)) |> 
@@ -301,7 +294,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   
   mutate(line = 1:n(), .by = document) |> 
   
-  filter(!str_starts(document, omit)) |> 
+  filter(!str_starts(document, omit)) |>                                 ###
   
   unnest_tokens(word, text) |> 
   
@@ -324,7 +317,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
 
 
 
-# Explore bigrams
+#### Visualize bigrams
 tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
   mutate(document = str_extract(text, rex)) |> 
   fill(document, .direction = "down") |> 
@@ -334,15 +327,15 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   
   filter(!str_starts(document, omit)) |> 
   
-  unnest_tokens(word, text) |> 
+  unnest_tokens(word, text) |>                                   ###
   
-  anti_join(stop_words) |> 
+  anti_join(stop_words) |>                                       ###
   
-  group_by(document, line) |> 
-  summarize(text = paste(word, collapse = " ")) |> 
-  ungroup() |> 
+  group_by(document, line) |>                                    ###
+  summarize(text = paste(word, collapse = " ")) |>               ###
+  ungroup() |>                                                   ###
   
-  unnest_tokens(word, text, token = "ngrams", n = 2) |> 
+  unnest_tokens(word, text, token = "ngrams", n = 2) |>          ###
   
   filter(is.not.na(word)) |> 
   
@@ -360,4 +353,9 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
     x = "Frequency",
     y = "Terms"
   )
+
+
+
+
+
 
