@@ -6,7 +6,7 @@ format:
     theme: dark
     slide-number: true
     show-slide-number: all
-    footer: 2022 Government & Public Policy R Conference
+    footer: R Government & Public Policy Conference
     smaller: false
     link-external-newwindow: true
     embed-resources: true
@@ -23,6 +23,8 @@ table {
 }
 </style>
 
+<https://github.com/WilDoane/RGov-Workshop>
+
 ```{r setup}
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -35,6 +37,8 @@ suppressPackageStartupMessages({
   library(DiagrammeR)
   library(diffr)
   library(corporaexplorer)
+  
+  
 })
 
 options(width = 150) # to affect printed PRE content
@@ -140,27 +144,27 @@ grViz("
 
 # What are We _Not_ Trying to Do?
 
-## Do Everything
+## We're Not Doing Everything Today
 
-Day      | Time  | Title                               | Speaker
--------- | ----- | ----------------------------------- | --------------
-Thursday | 09:00 | Using Quarto to Write and Update Reports | Shirley Han 
-&nbsp;   | 11:05 | Deploying R in a Secure Environment  | Jared Lander
-&nbsp;   | 13:25 | Data and American Politics           | David Shor
-&nbsp;   | 15:55 | Natural Language Statistics with LDA | Tommy Jones
-Friday   | 10:00 | Building Knowledge Systems           | Jake Dyal
-&nbsp;   | 13:35 | Qual: Shiny Qualitative Coding       | William Doane
-&nbsp;   | 15:40 | O*NET and ORS... Topic Modeling      | Drake Gibson
+Day      | Time  | Speaker                 | Title
+-------- | ----- | ----------------------- | --------------------------------------------------
+Thursday | 10:40 | Abigail Haddad | What Job Is This, Anyway?: Using LLMs to Classify USAJobs Data Scientist Listings
+&nbsp; | 11:05 | Jared P.  | I Wrote this Talk with an LLM
+&nbsp; | 11:30 | Soubhik Barari | LocalView: Scaling up the Analytics of Local Politics with R
+Friday | 11:40 | Selen Stromgren & Danielle Larese | Deterministic Extraction vs. Probabilistic Extrapolation: A Pilot for R-Enabled Augmentation of Information Retrieval by Humans
+&nbsp; | 12:05 | Vivian Peng & David Cyprian | Using Large Language Models in Production: Hype vs Reality 
 
-## Harm People
+
+
+## We're Not Harming People
 
 ![Meta's Galactica](images/meta-galactica.jpg)
 
-## Steal Intellectual Property
+## We're Not Stealing Intellectual Property
 
 ![Microsoft Github's Copilot](images/github-copilot.jpg)
 
-## Be Unkind to Others
+## We're Not Being Unkind to Others
 
 ![Microsoft Tay Chatbot](images/microsoft-chatbot.jpg)
 
@@ -212,7 +216,7 @@ Friday   | 10:00 | Building Knowledge Systems           | Jake Dyal
 
 
 ::: {.smaller}
-See N-gram Language Models. https://web.stanford.edu/~jurafsky/slp3/3.pdf
+See N-gram Language Models. <https://web.stanford.edu/~jurafsky/slp3/3.pdf>
 :::
 
 :::
@@ -227,7 +231,7 @@ See N-gram Language Models. https://web.stanford.edu/~jurafsky/slp3/3.pdf
 * Pay walls may hide data sources
 * Data may be mis-encoded
 * Documents may address multiple topics
-* Documents of interest may use technical language
+* Documents of interest may use specialized language
 * You may want to use foreign language data sources
 * In some cases, data parrots prompts
 * Formulaic text: "National Science Foundation", "Abstract Provided by Author:"
@@ -285,13 +289,13 @@ grViz("
   * What social or political contexts shaped the data?
 
 ## Acquire Raw Data
-* Use existing text files
-* Extract text from PDF
-* Extract text from MS Word
-* Extract text from MS Excel
-* Web scraping
-* Via APIs
-* From databases
+* Use existing text files (readLines)
+* Extract text from PDF (pdftools, tabulizer)
+* Extract text from MS Word (antiword, officer, )
+* Extract text from MS Excel (readr, readxl)
+* Web scraping (httr, rvest)
+* Via APIs (httr)
+* From databases (ODBC)
 
 ## Archive Raw Data
 * Textual data can change rapidly
@@ -348,6 +352,28 @@ Saving the documents you access in their original form
     * remote?
   * R data.frame
 
+## Use RStudio Projects
+
+* Organize code and data according to practices in <https://r-pkgs.org/>
+
+```
+project-folder
+  |- data-raw
+      |- acquire.R
+      |- clean.R
+      |- original-data-file.xlsx
+  |- data
+      |- clean.rda
+  |- R
+      |- eda.R
+      |- visualize.R
+  |- qmd
+      |- report.qmd
+      |- report.pdf
+  |- output
+      |- graphic.png
+```
+
 ## Tag Useful Information
 
 This is the heart of NLP: finding the signal in your textual data and tagging it for later analysis.
@@ -356,11 +382,11 @@ Consider maintaining tags as separate data, so you can continue to grow the set 
 
 ## Analyze
 
-Converting textual data into frequency counts, co-occurrence matrices, similarity scores, topic models.
+Converting textual data into keyword extraction, frequency counts, co-occurrence matrices, similarity scores, topic models.
 
 The goal is to reduce the number of documents that need to be considered and produce insights into patterns within and across the documents.
 
-Existence flags, frequency counts, co-occurrences, sentiment analysis, and topic modeling are common methods.
+Insight is limited by the letters and words in the documents.
 
 ## Visualize
 
@@ -376,15 +402,15 @@ What topics you research and what constitutes evidence for or against policy alt
 
 I often find myself considering a policy matrix:
 
-&nbsp; | Do Less | Do the Same | Do More | Do Something Else
------- | ------- | ----------- | ------- | -----------------
-Would it be Feasible? | | | |
-Would it be Ethical? | | | |
-Would it be Legal? | | | |
-Who Benefits? | | | |
-Who Doesn't? | | | |
-What are the costs? | | | |
-Who would be responsible? | | | |
+&nbsp; | Do Nothing | Do Less | Do the Same | Do More | Do Something Else
+---------------- | ------- | ------- | --------- | ------- | ---------------
+Would it be Feasible? | | | | |
+Would it be Ethical? | | | | |
+Would it be Legal? | | | | |
+Who Benefits? | | | | |
+Who Doesn't? | | | | |
+What are the costs? | | | | |
+Who would be responsible? | | | | |
 
 
 
@@ -402,12 +428,14 @@ Tools such as [RMarkdown](https://rmarkdown.rstudio.com/) and the newer and more
 
 
 
-# Text Encoding
+# Text Encoding {.smaller}
 <https://www.r-bloggers.com/2016/06/escaping-from-character-encoding-hell-in-r-on-windows/>
 
 <https://kunststube.net/encoding/>
 
 <https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/>
+
+<https://www.youtube.com/watch?v=MijmeoH9LT4>
 
 ## There's No Such This as "Plain Text"
 
@@ -436,9 +464,11 @@ ASCII and LATIN-1 use a single byte to encode a character
 
 UTF-8 uses 1, 2, 3, or 4 bytes
 
+The UTF-8 Byte Order Marker (BOM) is optional, but if present is `EF BB BF`
+
 UTF-16 uses 2, 3, or 4 bytes
 
-The Byte Order Marker (BOM) is a usually invisible pair of bytes (`FF FE` or `FE FF`) at the start of a file indicating whether the byte order is encoded as `00 0a` or `0a 00`. See: 
+The UTF 16 Byte Order Marker (BOM) is (a usually invisible) pair of bytes (UTF-16LE: `FF FE` or UTF-16BE: `FE FF`) at the start of a file indicating whether the byte order is encoded as `00 0a` or `0a 00`. See: 
   
 ### UTF-8 BOM
 
@@ -480,8 +510,8 @@ Gulliver's Travels (1726)
 Hexadecimal | Character
 ----------- | --------------------------------
 00          | NULL... End of File/EOF
-0a          | Line Feed
-0d          | Carriage Return
+0a          | Line Feed/LF/NL
+0d          | Carriage Return/CR
 20          | Space
 30--39      | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 41--5a      | A, B, C, ..., X, Y, Z
@@ -538,28 +568,43 @@ viewRaw(here("data-raw", "plaintext-utf-16-BE.csv"))
 ### Setting Encoding
 R has two ways to set encoding depending on the claim you're trying to make: either you're saying:
 
-* fileEncoding: "this file is already using the encoding..."
-* encoding: "I want you to re-encode the content to be..."
+* fileEncoding: "I want you to re-encode the content to be..."
+* encoding: "Assume this file is already using the encoding..."
 
 ### read.csv 
 
 Notice that the `<ff><fe>` mentioned in the error message is telling you that you're trying to read a UTF-16 encoded file---and that it's little endian, at that!
 
-Notice also that read.csv stoped reading the file after the first `t` character. That's because read.csv was likely defaulting to ASCII and encountered bytes `FF FE 74 00` and the `00` NULL byte was assumed to mean END OF FILE.
+Notice also that read.csv stopped reading the file after the first `t` character. That's because read.csv was likely defaulting to ASCII and encountered bytes `FF FE 74 00` and the `00` NULL byte was assumed to mean END OF FILE.
 
 ```{.r}
-read.csv(here("data-raw", "plaintext-utf-16-LE.csv"))
+hex(here("data-raw", "plaintext-utf-16-LE.csv"))
 ```
 
 ```{r}
 try({read.csv(here("data-raw", "plaintext-utf-16-LE.csv"))})
 ```
 
+### hexView 
+
+Notice that the `<ff><fe>` mentioned in the error message is telling you that you're trying to read a UTF-16 encoded file---and that it's little endian, at that!
+
+Notice also that read.csv stopped reading the file after the first `t` character. That's because read.csv was likely defaulting to ASCII and encountered bytes `FF FE 74 00` and the `00` NULL byte was assumed to mean END OF FILE.
+
+```{.r}
+readRaw(here("data-raw", "plaintext-utf-16-LE.csv"))
+```
+
+```{r}
+try({readRaw(here("data-raw", "plaintext-utf-16-LE.csv"))})
+```
+
+
 ### w/fileEncoding LE
 
 Notice here that the declared fileEncoding _does_ match the saved encoding of the file being read, so we see the expected result:
 
-```{r}
+```{r .bigger}
 #| echo: true
 read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), fileEncoding = "UTF-16LE")
 ```
@@ -606,7 +651,7 @@ try({read.csv(here("data-raw", "plaintext-utf-16-LE.csv"), encoding = "UTF-16")}
 We can exploit patterns that occur in textual data, but we need a language to describe those patterns.
 
 * Regular Expressions (RegEx, RE) are like super-powered find & replace
-* Invented by Stephen Kleene in the 1950s
+* Designed by Stephen Kleene in the 1950s
 * RegExes use the symbols on the standard keyboard to describe **patterns** in textual data
 
 ::: {.notes}
@@ -666,6 +711,8 @@ It may be necessary to describe patterns where a symbol or set of symbols repeat
 `*?` and `+?` are _lazy_ versions... they'll match as few characters as they can: c.*t given "catat" will match just on the "cat" portion.
 :::
 
+### ex.
+
 Pattern           | Matches                                         | Does Not Natch
 ----------------- | ----------------------------------------------  | ------------------------------
 c.?t              | ct, cat, cat, cbt, cct, ... c1t, c2t, ..., c#t  | caat
@@ -709,7 +756,7 @@ $    the end of a line of text
 
 ### Escapes
 
-The backslash \ is used to _escape_ the meaning of a character. For example, if you wanted to match a literal question mark how would yo do it? Remember: the question mark is used as a quantifier meaning _zero or one of the previous element_.
+The backslash \ is used to _escape_ the meaning of a character. For example, if you wanted to match a literal question mark how would you do it? Remember: the question mark is used as a quantifier meaning _zero or one of the previous element_.
 
 ```
 \r     carriage return (ASCII 13)
@@ -730,16 +777,27 @@ Create a regular expression to match each of the following and that matches only
 
 * five letter words
 * words that begin with a capital letter
-* phone number
-* social security number
+* U.S. phone number including area code
+* U.S. social security number
 * email addresses or social media handles, etc.
 * likely variations on the word PASSWORD
 
-### Counterexamples
+### Solutions
+
+Create a regular expression to match each of the following and that matches only the intended pattern.
+
+* [a-zA-Z]{5}
+* [A-Z][a-zA-Z]*
+* \([0-9]{3}\) [0-9]{3}-[0-9]{4}
+* [0-9]{3}-[0-9]{2}-[0-9]{4}
+* [-.+a-zA-Z0-9]+@[-.+a-zA-Z0-9]+\\.(com|edu|gov|org)
+* [pPbBdD][aA@][sS\$][sS\$][wWmM][oO0][rR][dDpPbB]
+
+## Regular Expressions
 
 Regular Expressions generally don't have _memory_. So, any pattern that requires remembering an earlier part of the pattern it out of scope.
 
-* matching parentheses, braces, brackets, quotation marks, etc.
+* matching number of parentheses, braces, brackets, quotation marks, etc.
 * the same number of letters before as after
 * digits that sum to a given value
 * words that start and end with the same character
@@ -849,7 +907,7 @@ parse_names(pis$pi_names)
 
 <!---- FEDERAL REGISTER ----------------------------------------------->
 
-# Using the Federal Register
+# Using the Federal Register {.smaller}
 <https://www.federalregister.gov/>
 
 <https://www.federalregister.gov/developers/documentation/api/v1>
@@ -873,7 +931,7 @@ parse_names(pis$pi_names)
 :::
 
 
-# Getting a List of Federal Agencies via API
+# Getting a List of Federal Agencies via API {.smaller}
 <https://www.federalregister.gov/developers/documentation/api/v1>
 
 ## 
@@ -981,7 +1039,7 @@ agencies_df |>
 
 
 
-# Getting a Presidential Executive Order via API
+# Getting a Presidential Executive Order via API {.smaller}
 <https://www.federalregister.gov/presidential-documents/executive-orders>
 
 <https://www.federalregister.gov/presidential-documents/executive-orders/joe-biden/2022>
@@ -1215,7 +1273,10 @@ dbDisconnect(con)
 
 
 
-# Getting a Set of Presidential Executive Orders via API
+# Getting a Set of Presidential Executive Orders via API {.smaller}
+
+<https://www.federalregister.gov/presidential-documents/executive-orders>
+<https://www.federalregister.gov/developers/documentation/api/v1>
 
 ##
 
@@ -1223,9 +1284,6 @@ dbDisconnect(con)
 
 ### Code
 ```{.r}
-# https://www.federalregister.gov/presidential-documents/executive-orders
-# https://www.federalregister.gov/developers/documentation/api/v1
-
 suppressPackageStartupMessages({
   library(here)
   library(hexView)
@@ -1719,6 +1777,8 @@ JJ | Adjective | good, bad, ugly
 JJR | Adjective, comparative | better, nicer
 JJS | Adjective, superlative | best, nicest
 
+<https://dl.acm.org/doi/10.5555/972470.972475>
+
 ### POS tags
 Tag | Description | Examples
 --- | ----------- | ---------------------
@@ -1728,6 +1788,8 @@ NN | Noun, singular or mass | tree, chair
 NNS | Noun, plural | trees, chairs
 NNP | Proper noun, singular | John, Paul, CIA
 NNPS | Proper noun, plural | Johns, Pauls, CIAs
+
+<https://dl.acm.org/doi/10.5555/972470.972475>
 
 ### POS tags
 Tag | Description | Examples
@@ -1741,6 +1803,8 @@ RBR | Adverb, comparative | later
 RBS | Adverb, superlative | latest
 RP | Particle | RP
 SYM | Symbol | CO2
+
+<https://dl.acm.org/doi/10.5555/972470.972475>
 
 ### POS tags
 Tag | Description | Examples
@@ -1758,6 +1822,8 @@ WP | Wh-pronoun | what, who, whom (wh-pronoun)
 WP$ | Possessive wh-pronoun | whose, who (wh-words)
 WRB | Wh-adverb | how, where, why (wh-adverb)
 
+<https://dl.acm.org/doi/10.5555/972470.972475>
+
 :::
 
 
@@ -1772,7 +1838,7 @@ WRB | Wh-adverb | how, where, why (wh-adverb)
 ::: {.panel-tabset}
 ### Text Analytics
 
-The analysis of textual data, usually without the aid of machine learning. The frequency counts and other metrics constructed from them for the basis for most text analytics and machine learning methods.
+The analysis of textual data, usually without the aid of machine learning. Frequency counts form the basis for most text analytics and machine learning methods.
 
 ### Corpus
 
@@ -2037,9 +2103,10 @@ words_df |>
 
 ### afinn
 
-```{r}
+```{r affinity}
 suppressPackageStartupMessages({
   library(tidytext)
+  library(textdata)
   
   library(dplyr)
   
@@ -2108,14 +2175,16 @@ words_df |>
 
 # Topic Modeling
 
-## Topic Modeling
+## Topic Modeling (TM)
 ::: {.panel-tabset}
 
 ### TF
 
 TM builds on _term-frequency_ or _TF_ data of the type we've been creating: frequency counts of the number of times each term appears in a document or across documents.
 
-TF is the relative frequency of a term within a document. That is, for any given term, the frequency of the term divided by the number of terms in the document.
+TF is the absolute frequency of a term within a document. 
+
+TF can be normalized: That is, for any given term, the frequency of the term divided by the number of terms in the document.
 
 ### IDF
 
@@ -2127,10 +2196,9 @@ IDF is a measure of whether a term is common or rare in a given corpus.
 
 The term-frequency times the inverse document frequency.
 
-Plainly: the number of times a given term occurs in a document times the log ratio of the number of documents to the number of documents in which the term appears.
+The number of times a given term occurs in a document times the log ratio of the number of documents in which the term appears.
 
-
-See <https://www.sciencedirect.com/topics/computer-science/inverse-document-frequency>
+See <https://en.wikipedia.org/wiki/Tf%E2%80%93idf>
 
 ### LDA
 
@@ -2139,7 +2207,7 @@ See <https://www.sciencedirect.com/topics/computer-science/inverse-document-freq
 
 Latent Dirichlet allocation is a method for "finding the mixture of words that is associated with each topic, while also determining the mixture of topics that describes each document." [Text Mining with R](https://www.tidytextmining.com/topicmodeling.html)
 
-This approach sometimes referred to as the _bag of words_ model.
+This approach is sometimes referred to as the _bag of words_ model.
 
 :::
 
@@ -2539,6 +2607,13 @@ text_df |>
   with(wordcloud(word, n))
 
 ```
+
+### URLs
+
+<https://blog.fellstat.com/?p=248>
+<https://github.com/lchiffon/wordcloud2>
+
+
 :::
 
 ## diffr
@@ -2568,6 +2643,9 @@ The letter ⟨r⟩ is used to form the ending \"-re\", which is used in certain 
 diffr(v1, v2, before = "Version 1", after = "Version 2")
 ```
 
+### URLs
+
+<https://github.com/muschellij2/diffr>
 
 
 :::
@@ -2588,6 +2666,10 @@ install.packages(c("corporaexplorer", "sotu", "janeaustinr"))
 library(corporaexplorer)
 run_sotu_app()
 ```
+
+### URLs
+
+<https://github.com/kgjerde/corporaexplorer>
 
 
 :::
@@ -2735,6 +2817,13 @@ scales    | label_* for format for output
 * <https://quarto.org/>
 * <https://ggplot2-book.org/>
 * <https://textrecipes.tidymodels.org/index.html>
+
+## R for Public Policy
+* <https://www.lecy.info/r-for-public-policy/>
+* <https://link.springer.com/book/10.1007/978-3-030-71352-2>
+* <https://link.springer.com/book/10.1007/978-3-030-71352-2>
+* <https://datacarpentry.org/lessons/#social-science-curriculum>
+
 
 ## Text Analytics/NLP (R-based)
 * <https://www.tidytextmining.com/>
