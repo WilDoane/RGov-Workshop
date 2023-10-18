@@ -2343,7 +2343,7 @@ d <-
   cast_sparse(document, term, n)
 
 # Any time you do anything probabilistic, set the seed to ensure reproducibility
-set.seed(202211)
+set.seed(202310)
 
 # LDA is a probabilistic algorithm
 lda <- tidylda(
@@ -2446,6 +2446,60 @@ tidy(lda, matrix = "beta")  |>
 
 ```
 
+### Bigrams
+```{r}
+tidy_docs <- 
+  docs |> 
+  clean_names() |> 
+  select(application_id, abstract_text) |> 
+  unnest_tokens(output = word, 
+                input = abstract_text,
+                stopwords = stop_words$word,
+                token = "ngrams",
+                n_min = 2, n = 2) |> 
+  count(application_id, word) |> 
+  filter(n > 1) |> 
+  
+  filter(!str_detect(word, "^[0-9]+$")) 
+
+colnames(tidy_docs)[1:2] <- c("document", "term")
+
+d <- 
+  tidy_docs %>% 
+  cast_sparse(document, term, n)
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202310)
+
+# LDA is a probabilistic algorithm
+lda <- tidylda(
+  data = d,
+  k = 10,
+  iterations = 200, 
+  burnin = 175,
+  alpha = 0.1, # prior for topics over documents
+  eta = 0.05,  # prior for words over topics
+  optimize_alpha = FALSE, # experimental
+  calc_likelihood = TRUE,
+  calc_r2 = TRUE, # see https://arxiv.org/abs/1911.11061
+  return_data = FALSE
+)
+
+tidy(lda, matrix = "beta")  |> 
+  slice_max(beta, n = 5, by = topic) |> 
+
+  ggplot(aes(beta, reorder_within(within = topic, token, by = beta))) +
+  geom_bar(stat = "identity") +
+  
+  facet_wrap(vars(topic), scales = "free") +
+  
+  scale_y_reordered() +
+  
+  labs(y = "Term")
+
+```
+
+
 ### Code
 ```{.r}
 tidy(lda, matrix = "beta")  |> 
@@ -2460,6 +2514,15 @@ tidy(lda, matrix = "beta")  |>
   
   labs(y = "Term")
 ```
+
+### Process
+
+Topics should be considered an exploratory tool, not an absolute truth.
+
+Consult subject matter experts (SMEs) to determine usefulness of the topic model and to suggest meaningful labels for each.
+
+Consider using a *card sorting task* using the top *n* documents in each topic: do SMEs sort the docuemnts into the same sets as the topic model?
+
 :::
 
 ## Bigram Relationships
