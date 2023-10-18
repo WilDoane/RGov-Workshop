@@ -15,6 +15,7 @@ editor: source
 ---
 
 # Introductions
+
 <style>
 .reveal .panel-tabset [role=tab],
 .reveal pre code,
@@ -2420,13 +2421,46 @@ tidy(lda, matrix = "theta") |>
   print(n = 150)
 ```
 
-
 :::
-
 
 <!---- VISUALIZATION -------------------------------------------------->
 
 # Visualiation
+
+## LDA
+
+::: {.panel-tabset}
+### Topics
+```{r}
+tidy(lda, matrix = "beta")  |> 
+  slice_max(beta, n = 5, by = topic) |> 
+
+  ggplot(aes(beta, reorder_within(within = topic, token, by = beta))) +
+  geom_bar(stat = "identity") +
+  
+  facet_wrap(vars(topic), scales = "free") +
+  
+  scale_y_reordered() +
+  
+  labs(y = "Term")
+
+```
+
+### Code
+```{.r}
+tidy(lda, matrix = "beta")  |> 
+  slice_max(beta, n = 5, by = topic) |> 
+
+  ggplot(aes(beta, reorder_within(within = topic, token, by = beta))) +
+  geom_bar(stat = "identity") +
+  
+  facet_wrap(vars(topic), scales = "free") +
+  
+  scale_y_reordered() +
+  
+  labs(y = "Term")
+```
+:::
 
 ## Bigram Relationships
 

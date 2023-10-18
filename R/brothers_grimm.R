@@ -277,8 +277,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   facet_wrap(.~document,  scales = "free_y")
 
 
-# Removing boilerplate
-
+# Remove boilerplate
 
 omit <- c("THE BROTHERS GRIMM FAIRY TALES", "PLEASE READ THIS BEFORE",  ###
 "THE FULL PROJECT GUTENBERG", "LIABILITY, BREACH OF WARRANTY",
@@ -317,7 +316,7 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
 
 
 
-#### Visualize bigrams
+# Visualize bigrams
 tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
   mutate(document = str_extract(text, rex)) |> 
   fill(document, .direction = "down") |> 
@@ -355,7 +354,85 @@ tibble(text = readLines(src_path, encoding = "UTF-8")) |>
   )
 
 
+# Topic Model
+
+library(tidylda)
+
+# Any time you do anything probabilistic, set the seed to ensure reproducibility
+set.seed(202310)
+
+model <-
+  tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
+  mutate(document = str_extract(text, rex)) |> 
+  fill(document, .direction = "down") |> 
+  filter(is.not.na(document)) |> 
+  
+  unnest_tokens(word, text) |>          
+  anti_join(stop_words) |>
+  
+  group_by(document) |> 
+  summarize(text = paste(word, collapse = " ")) |> 
+  ungroup() |> 
+  
+  unnest_tokens(word, text, token = "ngrams", n = 2) |>          
+  count(document, word) |> 
+  cast_sparse(document, word, n) |> 
+  
+  tidylda(
+    k = 10,
+    iterations = 200, 
+    burnin = 175,
+    alpha = 0.1, # prior for topics over documents
+    eta = 0.05,  # prior for words over topics
+    optimize_alpha = FALSE, # experimental
+    calc_likelihood = TRUE,
+    calc_r2 = TRUE, # see https://arxiv.org/abs/1911.11061
+    return_data = FALSE
+  )
+
+# What did we create? A Model!
+model
+
+# Did the model "converge"? If not, perhaps more iterations
+ggplot(aes(iteration, log_likelihood), data = model$log_likelihood) +
+  geom_line() +
+  ggtitle("Model Convergence") +
+  ylab(NULL)
 
 
+
+tidy(model, matrix = "theta")   # P(topic|document)
+tidy(model, matrix = "beta")    # P(term|topic)
+tidy(model, matrix = "lambda")  # P(topic|term)
+
+model$summary
+
+
+# What is the most likely topic for each document?
+tidy(model, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta))
+
+# Which documents belong to each topic?
+tidy(model, matrix = "theta") |> 
+  group_by(document) |> 
+  filter(theta == max(theta)) |> 
+  ungroup() |> 
+  arrange(topic)
+
+View(.Last.value)
+
+# Visualize which terms are associated with which topics
+tidy(model, matrix = "beta")  |> 
+  slice_max(beta, n = 5, by = topic) |> 
+
+  ggplot(aes(beta, reorder_within(within = topic, token, by = beta))) +
+  geom_bar(stat = "identity") +
+  
+  facet_wrap(vars(topic), scales = "free") +
+  
+  scale_y_reordered() +
+  
+  labs(y = "Term")
 
 
