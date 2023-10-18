@@ -12,6 +12,7 @@ library(stringi)
 
 stringi::stri_enc_list()
 
+# Test a common character encoding
 x <- readLines(src_path, encoding = "latin1")
 
 x[1:11]
@@ -53,7 +54,7 @@ charToRaw(".")
 lapply(c("h", "t", "t", "p", "s", ":", "/", "/", "w", "w", "w"), charToRaw) |> unlist()
 
 
-# Which lines contain apostrophies?
+# Which lines contain apostrophes?
 
 x <- readLines(src_path)
 
@@ -185,7 +186,7 @@ View(.Last.value)
 
 library(ggplot2)
 
-theme_set(theme_minimal())
+theme_set(theme_bw())
 
 tibble(text = readLines(src_path, encoding = "UTF-8")) |> 
   mutate(document = str_extract(text, rex)) |> 
